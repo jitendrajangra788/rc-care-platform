@@ -320,21 +320,33 @@ export function BookingsWorkspace({
   function openEdit(b: Booking) {
     setEditing(b);
     const linked = b.patientId ? patients.find((p) => p.id === b.patientId) : undefined;
+    // Care site address/GPS live on the booking — prefer them over stale CRM rows.
+    const basePatient = linked
+      ? patientToForm(linked)
+      : {
+          name: b.patientName,
+          phone: b.phone,
+          age: b.patientAge?.toString() || "",
+          gender: b.gender || "Male",
+          address: "",
+          area: "Bhilwara",
+          notes: b.notes || "",
+          familyUserId: b.familyUserId || "",
+        };
     setForm({
       patientId: b.patientId || linked?.id || "",
       patientMode: b.patientId || linked ? "existing" : "new",
-      patient: linked
-        ? patientToForm(linked)
-        : {
-            name: b.patientName,
-            phone: b.phone,
-            age: b.patientAge?.toString() || "",
-            gender: b.gender || "Male",
-            address: b.address,
-            area: b.area || "Bhilwara",
-            notes: b.notes || "",
-            familyUserId: b.familyUserId || "",
-          },
+      patient: {
+        ...basePatient,
+        name: b.patientName || basePatient.name,
+        phone: b.phone || basePatient.phone,
+        age: b.patientAge?.toString() || basePatient.age,
+        gender: b.gender || basePatient.gender,
+        address: b.address || basePatient.address,
+        area: b.area || basePatient.area || "Bhilwara",
+        notes: b.notes || basePatient.notes,
+        familyUserId: b.familyUserId || basePatient.familyUserId,
+      },
       guardianName: b.guardianName || "",
       careType: b.careType,
       shift: b.shift,
@@ -348,8 +360,8 @@ export function BookingsWorkspace({
       notes: b.notes || "",
       assignedStaffId: b.assignedStaffId || "",
       status: b.status,
-      lat: b.lat?.toString() || "",
-      lng: b.lng?.toString() || "",
+      lat: typeof b.lat === "number" ? String(b.lat) : "",
+      lng: typeof b.lng === "number" ? String(b.lng) : "",
       geofenceRadiusM: String(b.geofenceRadiusM || 250),
       sitePin: b.sitePin || "",
       locationId:
@@ -366,6 +378,16 @@ export function BookingsWorkspace({
     setConflicts([]);
     setError("");
     setOpen(true);
+  }
+
+  function setCareGps(lat: number, lng: number) {
+    setForm((f) => ({
+      ...f,
+      lat: lat.toFixed(6),
+      lng: lng.toFixed(6),
+      locationId: "",
+    }));
+    toast.success("Care GPS updated", `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
   }
 
   function applyLocation(locationId: string) {
@@ -397,19 +419,14 @@ export function BookingsWorkspace({
     setGpsBusy(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setForm((f) => ({
-          ...f,
-          lat: pos.coords.latitude.toFixed(6),
-          lng: pos.coords.longitude.toFixed(6),
-        }));
         setGpsBusy(false);
-        toast.success("GPS captured", "Site coordinates filled from device");
+        setCareGps(pos.coords.latitude, pos.coords.longitude);
       },
       (err) => {
         setGpsBusy(false);
         toast.error("GPS failed", err.message || "Allow location permission");
       },
-      { enableHighAccuracy: true, timeout: 15000 },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );
   }
 
@@ -485,10 +502,10 @@ export function BookingsWorkspace({
       toast.error("Check the form", stepErr);
       return;
     }
-    const latNum = form.lat ? Number(form.lat) : undefined;
-    const lngNum = form.lng ? Number(form.lng) : undefined;
-    // Only the location the user picked — never auto-match GPS to a saved site.
-    const locationId = form.locationId || undefined;
+    const latNum = form.lat.trim() ? Number(form.lat) : NaN;
+    const lngNum = form.lng.trim() ? Number(form.lng) : NaN;
+    // Always send locationId (null clears allotment) so PATCH sees the key.
+    const locationId = form.locationId || null;
     const payload = {
       id: editing?.id,
       patientId: form.patientMode === "existing" ? form.patientId || undefined : undefined,
@@ -503,8 +520,8 @@ export function BookingsWorkspace({
       endDate: form.endDate || undefined,
       shiftStartTime: form.shiftStartTime || undefined,
       shiftEndTime: form.shiftEndTime || undefined,
-      address: form.patient.address,
-      area: form.patient.area,
+      address: form.patient.address.trim(),
+      area: form.patient.area.trim(),
       amount: form.amount ? Number(form.amount) : undefined,
       priority: form.priority,
       notes: form.notes || form.patient.notes,
@@ -512,8 +529,8 @@ export function BookingsWorkspace({
       assignedStaffId: form.assignedStaffId || undefined,
       clearStaff: editing ? !form.assignedStaffId : undefined,
       status: form.status,
-      lat: latNum,
-      lng: lngNum,
+      lat: Number.isFinite(latNum) ? latNum : undefined,
+      lng: Number.isFinite(lngNum) ? lngNum : undefined,
       geofenceRadiusM: form.geofenceRadiusM ? Number(form.geofenceRadiusM) : 250,
       sitePin: form.sitePin.trim() || "",
       locationId,
@@ -546,7 +563,7 @@ export function BookingsWorkspace({
       editing ? "Booking updated" : "Booking created",
       [
         data.booking?.id,
-        form.assignedStaffId && locationId ? "site allotted to staff" : null,
+        form.assignedStaffId && form.locationId ? "site allotted to staff" : null,
       ]
         .filter(Boolean)
         .join(" · ") || undefined,
@@ -997,7 +1014,7 @@ export function BookingsWorkspace({
               onSubmit={onSubmit}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5 md:p-3">
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5 pb-28 md:p-3 md:pb-3">
                 {wizardStep === 1 ? (
                   <section>
                     <div className="flex flex-wrap items-end justify-between gap-2">
@@ -1312,11 +1329,11 @@ export function BookingsWorkspace({
                         </Select>
                       </FormField>
 
-                      <div className="sm:col-span-2 rounded-[var(--radius-xl)] border border-[var(--line)] bg-paper-2/60 p-4">
+                      <div className="sm:col-span-2 rounded-[var(--radius-xl)] border border-[var(--line)] bg-paper-2/60 p-3 sm:p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-semibold text-heading">
                             <MapPin className="mr-1 inline h-4 w-4 text-primary" />
-                            Assign care site (GPS)
+                            Care location (address + GPS)
                           </p>
                           <Link
                             href="/dashboard/admin/locations"
@@ -1326,29 +1343,61 @@ export function BookingsWorkspace({
                             Manage locations
                           </Link>
                         </div>
-                        <FormField label="Saved care location" className="mt-3">
-                          <Select
-                            value={form.locationId}
-                            onChange={(e) => applyLocation(e.target.value)}
-                          >
-                            <option value="">Manual / custom GPS</option>
-                            {locations.map((l) => (
-                              <option key={l.id} value={l.id}>
-                                {l.locationName} · {l.address}
-                              </option>
-                            ))}
-                          </Select>
-                        </FormField>
+
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <FormField label="Care address *" className="sm:col-span-2">
+                            <Input
+                              required
+                              value={form.patient.address}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  patient: { ...f.patient, address: e.target.value },
+                                  locationId: "",
+                                }))
+                              }
+                              placeholder="House / street / landmark"
+                              autoComplete="street-address"
+                            />
+                          </FormField>
+                          <FormField label="Area">
+                            <Input
+                              value={form.patient.area}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  patient: { ...f.patient, area: e.target.value },
+                                  locationId: "",
+                                }))
+                              }
+                              placeholder="e.g. Subhash Nagar"
+                            />
+                          </FormField>
+                          <FormField label="Saved care location">
+                            <Select
+                              value={form.locationId}
+                              onChange={(e) => applyLocation(e.target.value)}
+                            >
+                              <option value="">Manual / custom GPS</option>
+                              {locations.map((l) => (
+                                <option key={l.id} value={l.id}>
+                                  {l.locationName} · {l.address}
+                                </option>
+                              ))}
+                            </Select>
+                          </FormField>
+                        </div>
                         {locations.length === 0 ? (
                           <p className="mt-2 text-xs text-warning">
-                            No saved locations yet. Add one in Locations, or
-                            detect GPS below.
+                            No saved locations yet. Add one in Locations, tap the
+                            map, or detect GPS below.
                           </p>
                         ) : null}
 
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                           <FormField label="Latitude *">
                             <Input
+                              inputMode="decimal"
                               placeholder="e.g. 25.347600"
                               value={form.lat}
                               onChange={(e) =>
@@ -1363,6 +1412,7 @@ export function BookingsWorkspace({
                           </FormField>
                           <FormField label="Longitude *">
                             <Input
+                              inputMode="decimal"
                               placeholder="e.g. 74.640800"
                               value={form.lng}
                               onChange={(e) =>
@@ -1391,7 +1441,6 @@ export function BookingsWorkspace({
                             />
                             <span className="mt-1 block text-[11px] text-muted">
                               Staff must be within this distance to mark present.
-                              Not the PIN.
                             </span>
                           </FormField>
                           <FormField label="Site PIN (optional, 4–6 digits)">
@@ -1410,10 +1459,6 @@ export function BookingsWorkspace({
                                 })
                               }
                             />
-                            <span className="mt-1 block text-[11px] text-muted">
-                              Extra code staff types with morning/evening present.
-                              Leave blank if unused.
-                            </span>
                           </FormField>
                         </div>
 
@@ -1442,33 +1487,39 @@ export function BookingsWorkspace({
 
                         <div className="mt-1.5">
                           {hasMapCoords ? (
-                            <BookingMap
-                              lat={mapLat}
-                              lng={mapLng}
-                              radiusM={
-                                form.geofenceRadiusM
-                                  ? Number(form.geofenceRadiusM)
-                                  : 250
-                              }
-                            />
+                            <>
+                              <BookingMap
+                                lat={mapLat}
+                                lng={mapLng}
+                                radiusM={
+                                  form.geofenceRadiusM
+                                    ? Number(form.geofenceRadiusM)
+                                    : 250
+                                }
+                                onLocationChange={setCareGps}
+                              />
+                              <p className="mt-1.5 text-[11px] text-muted">
+                                Tap the map to move the care pin — then Update
+                                booking.
+                              </p>
+                            </>
                           ) : (
-                            <div className="grid h-56 place-items-center rounded-[var(--radius-xl)] border border-dashed border-[var(--line)] bg-paper-2 text-sm text-muted">
-                              Set latitude & longitude to preview the care site
-                              map.
+                            <div className="grid h-44 place-items-center rounded-[var(--radius-xl)] border border-dashed border-[var(--line)] bg-paper-2 px-4 text-center text-sm text-muted sm:h-56">
+                              Set latitude &amp; longitude, pick a saved location,
+                              or detect GPS to preview the care site.
                             </div>
                           )}
                         </div>
 
                         {form.assignedStaffId && form.locationId ? (
                           <p className="mt-3 text-xs font-medium text-success">
-                            Save pe yeh saved location staff ko allot hogi
-                            (attendance site lock). GPS se automatic allot nahi
-                            hoga.
+                            On save, this saved location is allotted to the staff
+                            for attendance geofence.
                           </p>
                         ) : form.assignedStaffId && form.lat && form.lng ? (
                           <p className="mt-3 text-xs text-muted">
-                            Staff + custom GPS save hoga. Allotment tabhi banega
-                            jab upar se saved care location choose karoge.
+                            Custom GPS will save on the booking. Choose a saved
+                            care location above to create a staff allotment.
                           </p>
                         ) : null}
                       </div>

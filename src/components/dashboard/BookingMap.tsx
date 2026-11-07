@@ -7,6 +7,7 @@ import {
   MapContainer,
   TileLayer,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -18,30 +19,47 @@ function Recenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+function MapClickPicker({
+  onPick,
+}: {
+  onPick?: (lat: number, lng: number) => void;
+}) {
+  useMapEvents({
+    click(e) {
+      if (!onPick) return;
+      onPick(Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6)));
+    },
+  });
+  return null;
+}
+
 /** Leaflet care-site map. Client-only — import via next/dynamic with ssr:false. */
 export default function BookingMap({
   lat,
   lng,
   radiusM,
   className,
+  onLocationChange,
 }: {
   lat: number;
   lng: number;
   radiusM?: number;
   className?: string;
+  /** Tap/click map to set care GPS (mobile-friendly). */
+  onLocationChange?: (lat: number, lng: number) => void;
 }) {
   return (
     <div
       className={
         className ??
-        "h-56 w-full overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)]"
+        "h-44 w-full touch-pan-y overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] sm:h-56"
       }
     >
       <MapContainer
         center={[lat, lng]}
         zoom={15}
         scrollWheelZoom={false}
-        className="h-full min-h-[14rem] w-full"
+        className="h-full min-h-[11rem] w-full sm:min-h-[14rem]"
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
@@ -49,6 +67,7 @@ export default function BookingMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <Recenter lat={lat} lng={lng} />
+        <MapClickPicker onPick={onLocationChange} />
         {typeof radiusM === "number" && radiusM > 0 ? (
           <Circle
             center={[lat, lng]}
@@ -70,6 +89,15 @@ export default function BookingMap({
             fillOpacity: 0.95,
             weight: 2,
           }}
+          eventHandlers={
+            onLocationChange
+              ? {
+                  click: (e) => {
+                    e.originalEvent?.stopPropagation?.();
+                  },
+                }
+              : undefined
+          }
         />
       </MapContainer>
     </div>

@@ -61,9 +61,9 @@ function resolveOrCreatePatient(
       name: input.patientName || byPhone.name,
       age: typeof input.patientAge === "number" ? input.patientAge : byPhone.age,
       gender: input.gender || byPhone.gender,
-      address: input.address || byPhone.address,
-      area: input.area || byPhone.area,
-      notes: input.notes || byPhone.notes,
+      address: input.address !== undefined ? input.address : byPhone.address,
+      area: input.area !== undefined ? input.area : byPhone.area,
+      notes: input.notes !== undefined ? input.notes : byPhone.notes,
       familyUserIds: Array.from(familyIds),
     };
     return byPhone.id;
@@ -99,6 +99,16 @@ function resolveLocationId(
     : undefined;
 }
 
+/** Accept number or numeric string from mobile form payloads. */
+function parseCoord(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value.trim());
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
 function upsertAllotment(
   db: Awaited<ReturnType<typeof readDb>>,
   booking: Booking,
@@ -129,12 +139,14 @@ function upsertAllotment(
   if (loc) {
     const bi = db.bookings.findIndex((b) => b.id === booking.id);
     if (bi >= 0) {
+      // Explicit saved location always refreshes GPS; keep form address if set.
       db.bookings[bi] = {
         ...db.bookings[bi],
-        lat: db.bookings[bi].lat ?? loc.lat,
-        lng: db.bookings[bi].lng ?? loc.lng,
-        geofenceRadiusM: db.bookings[bi].geofenceRadiusM ?? loc.geofenceRadiusM ?? 250,
+        lat: loc.lat,
+        lng: loc.lng,
+        geofenceRadiusM: loc.geofenceRadiusM ?? db.bookings[bi].geofenceRadiusM ?? 250,
         address: db.bookings[bi].address || loc.address,
+        area: db.bookings[bi].area || loc.city || db.bookings[bi].area,
       };
     }
   }
@@ -267,12 +279,10 @@ export async function POST(req: Request) {
     familyUserId,
     amount: typeof body.amount === "number" ? body.amount : defaultRate(shift),
     createdAt: new Date().toISOString(),
-    lat: typeof body.lat === "number" ? body.lat : loc?.lat,
-    lng: typeof body.lng === "number" ? body.lng : loc?.lng,
+    lat: parseCoord(body.lat) ?? loc?.lat,
+    lng: parseCoord(body.lng) ?? loc?.lng,
     geofenceRadiusM:
-      typeof body.geofenceRadiusM === "number"
-        ? body.geofenceRadiusM
-        : loc?.geofenceRadiusM || 250,
+      parseCoord(body.geofenceRadiusM) ?? loc?.geofenceRadiusM ?? 250,
     patientAge: typeof body.patientAge === "number" ? body.patientAge : undefined,
     gender: body.gender,
     priority: body.priority || "normal",
@@ -389,6 +399,9 @@ export async function PATCH(req: Request) {
   const loc = locationId
     ? (db.careLocations || []).find((l) => l.id === locationId)
     : undefined;
+  const bodyLat = parseCoord(body.lat);
+  const bodyLng = parseCoord(body.lng);
+  const bodyGeofence = parseCoord(body.geofenceRadiusM);
   const prevStaffId = current.assignedStaffId;
   const nextStaffId = body.clearStaff
     ? undefined
@@ -474,12 +487,10 @@ export async function PATCH(req: Request) {
     assignedStaffId: nextStaffId,
     familyUserId: nextFamilyUserId,
     amount: typeof body.amount === "number" ? body.amount : current.amount,
-    lat: typeof body.lat === "number" ? body.lat : loc?.lat ?? current.lat,
-    lng: typeof body.lng === "number" ? body.lng : loc?.lng ?? current.lng,
-    geofenceRadiusM:
-      typeof body.geofenceRadiusM === "number"
-        ? body.geofenceRadiusM
-        : loc?.geofenceRadiusM ?? current.geofenceRadiusM,
+    // Prefer explicit GPS from the form; else saved location; else keep current.
+    lat: bodyLat ?? loc?.lat ?? current.lat,
+    lng: bodyLng ?? loc?.lng ?? current.lng,
+    geofenceRadiusM: bodyGeofence ?? loc?.geofenceRadiusM ?? current.geofenceRadiusM,
     patientAge: nextAge,
     gender: nextGender,
     priority: body.priority || current.priority,

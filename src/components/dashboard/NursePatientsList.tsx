@@ -443,7 +443,11 @@ function WorklistRow({ row }: { row: NursePatientRow }) {
           <p className="mt-1 flex items-start gap-1 text-sm text-muted">
             <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span className="line-clamp-2">
-              {patient.address || patient.area || "Location not set"}
+              {activeBooking?.address ||
+                patient.address ||
+                activeBooking?.area ||
+                patient.area ||
+                "Location not set"}
             </span>
           </p>
         </div>

@@ -881,6 +881,164 @@ button.field.field-with-icon {
   background: var(--primary);
 }
 
+/* ——— Mobile-first responsive layer (project-wide) ——— */
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.site-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: max(1rem, env(safe-area-inset-left))
+    max(1rem, env(safe-area-inset-right));
+}
+
+@media (max-width: 767px) {
+  .text-display-xl {
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
+  }
+
+  .text-display-lg {
+    font-size: clamp(1.35rem, 5.5vw, 1.7rem);
+  }
+
+  .text-display-md {
+    font-size: clamp(1.1rem, 4.2vw, 1.25rem);
+  }
+
+  /* Prevent iOS zoom on focus */
+  .field,
+  input.field,
+  select.field,
+  textarea.field,
+  .field textarea,
+  textarea {
+    font-size: 16px;
+  }
+
+  .btn {
+    min-height: 2.75rem;
+    padding-inline: 1rem;
+  }
+
+  .btn-sm {
+    min-height: 2.35rem;
+    padding-inline: 0.75rem;
+  }
+
+  .btn-icon {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+
+  .dash-stack {
+    gap: 0.65rem;
+    max-width: 100%;
+  }
+
+  .dash-grid-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .dash-grid-stats.cols-3 > :last-child:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .soft-panel,
+  .rc-card,
+  .rc-card-static,
+  .list-tile,
+  .ehr-command,
+  .ehr-worklist,
+  .ehr-kpi {
+    max-width: 100%;
+  }
+
+  .data-table-wrap {
+    margin-inline: -0.15rem;
+    border-radius: var(--radius-md);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.45rem 0.55rem;
+  }
+
+  /* Stack dense action rows; full-width primary CTAs */
+  .mobile-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .mobile-stack > .btn,
+  .mobile-full-btn {
+    width: 100%;
+  }
+
+  .nurse-ops .ehr-row {
+    grid-template-columns: 1fr;
+    padding: 0.85rem 0.85rem;
+  }
+
+  .nurse-ops .ehr-storyboard {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .nurse-ops .ehr-storyboard::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nurse-ops .ehr-patient-banner {
+    border-radius: var(--radius-lg);
+  }
+
+  .nurse-ops .ehr-storyboard button {
+    padding: 0.75rem 0.8rem;
+    font-size: 0.78rem;
+  }
+}
+
+/* Phone landscape / tiny widths */
+@media (max-width: 380px) {
+  .dash-grid-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Touch-friendly horizontal chip rails */
+.chip-rail {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+}
+
+.chip-rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optional dock clearance utility (pages already use pb-20 on nurse routes) */
+.pb-dock {
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .pb-dock {
+    padding-bottom: 1.25rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise,
   .animate-rise-delay,

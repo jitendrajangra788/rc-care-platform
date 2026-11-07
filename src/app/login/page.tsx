@@ -99,36 +99,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative z-0 min-h-screen">
+    <div className="relative z-0 min-h-screen pb-[env(safe-area-inset-bottom)]">
       <SiteHeader />
-      <div className="relative z-10 mx-auto grid max-w-6xl items-start gap-10 px-5 py-12 md:grid-cols-2 md:px-8 md:py-16">
-        <div>
+      <div className="relative z-10 mx-auto grid max-w-6xl items-start gap-6 px-4 py-8 sm:px-5 sm:py-10 md:grid-cols-2 md:gap-10 md:px-8 md:py-16">
+        <div className="order-2 md:order-1">
           <p className="text-label text-primary">Welcome back</p>
-          <h1 className="font-display mt-4 text-4xl tracking-[-0.03em] md:text-6xl">
+          <h1 className="font-display mt-3 text-[2rem] leading-tight tracking-[-0.03em] sm:text-4xl md:mt-4 md:text-6xl">
             Sign in to Roshan Care
           </h1>
-          <p className="mt-4 max-w-md text-ink-soft">
+          <p className="mt-3 max-w-md text-sm text-ink-soft sm:mt-4 sm:text-base">
             {showDemos
               ? "Choose a role below for one-click demo login, or sign in with email."
               : "Sign in with your Roshan Care email and password."}
           </p>
           {showDemos ? (
-            <div className="mt-8 space-y-3">
+            <div className="mt-5 grid gap-2 sm:mt-8 sm:gap-3">
               {demos.map((d) => (
                 <button
                   key={d.role}
                   type="button"
                   disabled={loading}
                   onClick={() => void loginWith(d.email, d.password)}
-                  className="soft-panel relative z-10 block w-full cursor-pointer rounded-2xl px-4 py-4 text-left transition hover:bg-white disabled:cursor-wait disabled:opacity-60"
+                  className="soft-panel relative z-10 block w-full cursor-pointer rounded-2xl px-3.5 py-3.5 text-left transition hover:bg-white active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 sm:px-4 sm:py-4"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <span className="text-sm font-semibold text-primary">{d.title}</span>
                       <span className="mt-1 block text-xs text-ink-soft">{d.hint}</span>
-                      <span className="mt-1 block text-[11px] text-ink-soft/80">{d.email}</span>
+                      <span className="mt-1 block truncate text-[11px] text-ink-soft/80">
+                        {d.email}
+                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-heading">{d.role}</span>
+                    <span className="shrink-0 text-xs font-semibold text-heading">{d.role}</span>
                   </div>
                 </button>
               ))}
@@ -138,7 +140,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={onSubmit}
-          className="soft-panel relative z-10 rounded-[var(--radius-2xl)] p-6 md:p-8"
+          className="soft-panel relative z-10 order-1 rounded-[var(--radius-2xl)] p-4 sm:p-6 md:order-2 md:p-8"
         >
           <label className="block text-sm">
             <span className="mb-1 block text-muted">Email</span>

@@ -28,11 +28,11 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
           : "border-b border-[var(--line)] bg-surface/85 backdrop-blur-xl",
       )}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5 md:px-8 md:py-4">
-        <Link href="/" className="min-w-0">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-5 sm:py-3.5 md:px-8 md:py-4">
+        <Link href="/" className="min-w-0 flex-1">
           <span
             className={cn(
-              "font-display block text-[1.7rem] leading-none tracking-[-0.03em] md:text-[1.85rem]",
+              "font-display block truncate text-[1.45rem] leading-none tracking-[-0.03em] sm:text-[1.7rem] md:text-[1.85rem]",
               overlay ? "text-white" : "text-heading",
             )}
           >
@@ -40,7 +40,7 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
           </span>
           <span
             className={cn(
-              "mt-1 block text-[10px] font-semibold uppercase tracking-[0.2em]",
+              "mt-1 block truncate text-[9px] font-semibold uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.2em]",
               overlay ? "text-white/65" : "text-primary",
             )}
           >
@@ -92,18 +92,23 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
           </Link>
         </div>
 
-        <button
-          type="button"
-          className={cn(
-            "grid h-10 w-10 place-items-center rounded-full transition lg:hidden",
-            overlay ? "bg-white/12 text-white" : "bg-paper-2 text-heading",
-          )}
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle menu"
-          aria-expanded={open}
-        >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
+          <Link href="/book" className="btn btn-primary btn-sm">
+            Book
+          </Link>
+          <button
+            type="button"
+            className={cn(
+              "grid h-10 w-10 place-items-center rounded-full transition",
+              overlay ? "bg-white/12 text-white" : "bg-paper-2 text-heading",
+            )}
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={open}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {open ? (

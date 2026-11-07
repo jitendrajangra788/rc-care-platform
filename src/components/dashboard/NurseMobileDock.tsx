@@ -54,7 +54,7 @@ export function NurseMobileDock() {
   const pathname = usePathname() || "";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-surface/95 px-2 py-2 backdrop-blur-xl md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-surface/95 px-2 pt-2 backdrop-blur-xl pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden">
       <nav className="mx-auto grid max-w-[1200px] grid-cols-5 gap-1">
         {items.map((item) => {
           const Icon = item.icon;
@@ -65,7 +65,7 @@ export function NurseMobileDock() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-lg)] px-1 py-1.5 text-[10px] font-semibold transition",
+                "flex min-h-[3rem] flex-col items-center justify-center gap-0.5 rounded-[var(--radius-lg)] px-1 py-1.5 text-[10px] font-semibold transition active:scale-[0.98]",
                 primary && !active
                   ? "bg-primary text-[var(--sidebar-fg)] shadow-[var(--shadow-xs)]"
                   : active
@@ -73,7 +73,7 @@ export function NurseMobileDock() {
                     : "text-muted hover:bg-paper-2 hover:text-heading",
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-5 w-5" />
               {item.label}
             </Link>
           );

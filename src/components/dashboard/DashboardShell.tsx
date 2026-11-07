@@ -410,17 +410,26 @@ function DashboardShellInner({
       ) : null}
 
       <div className={cn("transition-[padding] duration-300", mainPad)}>
-        <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-surface/90 backdrop-blur-xl">
-          <div className="flex flex-col gap-1 px-3 py-1.5 md:px-4">
+        <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-surface/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+          <div className="flex flex-col gap-1 px-3 py-2 md:px-4 md:py-1.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <button
                   type="button"
-                  className="grid h-8 w-8 place-items-center rounded-full bg-paper-2 text-heading lg:hidden"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper-2 text-heading lg:hidden"
                   onClick={() => setOpen(true)}
                   aria-label="Open sidebar"
                 >
-                  <Menu className="h-4 w-4" />
+                  <Menu className="h-5 w-5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCmdOpen(true)}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper-2 text-heading md:hidden"
+                  aria-label={t.searchPages}
+                >
+                  <Search className="h-4 w-4" />
                 </button>
 
                 <button
@@ -437,7 +446,7 @@ function DashboardShellInner({
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={toggle}
@@ -460,17 +469,21 @@ function DashboardShellInner({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Breadcrumbs />
-              <p className="text-xs text-muted md:hidden">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <Breadcrumbs />
+              </div>
+              <p className="truncate text-xs text-muted md:hidden">
                 {t.welcome}, <span className="font-semibold text-heading">{user.name}</span>
               </p>
             </div>
           </div>
         </header>
 
-        <main className="min-w-0 px-2.5 pb-4 pt-1.5 md:px-3 md:pb-5 md:pt-2">
-          <div className="mx-auto w-full min-w-0 max-w-[1280px] space-y-1.5">{children}</div>
+        <main className="min-w-0 px-3 pb-4 pt-2 md:px-4 md:pb-5 md:pt-2">
+          <div className="mx-auto w-full min-w-0 max-w-[1280px] space-y-2 md:space-y-1.5">
+            {children}
+          </div>
         </main>
       </div>
     </div>

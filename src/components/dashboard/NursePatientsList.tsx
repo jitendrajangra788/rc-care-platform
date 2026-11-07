@@ -510,22 +510,22 @@ function WorklistRow({ row }: { row: NursePatientRow }) {
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-1.5 xl:max-w-[15rem] xl:justify-end">
+      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3 xl:flex xl:max-w-[15rem] xl:flex-wrap xl:justify-end">
         <Link
           href={`/dashboard/nurse/patients/${patient.id}`}
-          className="btn btn-primary btn-sm"
+          className="btn btn-primary btn-sm w-full justify-center xl:w-auto"
         >
           <UserRound className="h-3.5 w-3.5" /> Open chart
         </Link>
         <Link
           href={`/dashboard/nurse/patients/${patient.id}?tab=care`}
-          className="btn btn-outline btn-sm"
+          className="btn btn-outline btn-sm w-full justify-center xl:w-auto"
         >
           <ClipboardList className="h-3.5 w-3.5" /> Care plan
         </Link>
         <Link
           href={`/dashboard/nurse/patients/${patient.id}?tab=vitals`}
-          className="btn btn-outline btn-sm"
+          className="btn btn-outline btn-sm w-full justify-center xl:w-auto"
         >
           <Activity className="h-3.5 w-3.5" /> Vitals
         </Link>

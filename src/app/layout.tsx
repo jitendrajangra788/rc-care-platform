@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { WhatsAppFab } from "@/components/marketing/WhatsAppFab";
 import { ToastHost } from "@/components/ui/toast";
@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   },
   description:
     "Roshan Care — Trusted Home Healthcare in Bhilwara. Verified staff, clear packages, and family updates every shift.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#087F8C",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

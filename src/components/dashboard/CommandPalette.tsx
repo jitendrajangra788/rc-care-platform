@@ -1,10 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { Search } from "lucide-react";
+import {
+  CalendarDays,
+  FileText,
+  Search,
+  UserRound,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { NavItem } from "@/lib/nav";
+import type { SearchHit } from "@/lib/search";
+import { cn } from "@/lib/utils";
+
+const typeMeta: Record<
+  SearchHit["type"],
+  { label: string; icon: LucideIcon }
+> = {
+  patient: { label: "Patients", icon: UserRound },
+  booking: { label: "Bookings", icon: CalendarDays },
+  staff: { label: "Staff", icon: Users },
+  lead: { label: "Leads", icon: FileText },
+  invoice: { label: "Billing", icon: FileText },
+};
 
 export function CommandPalette({
   links,
@@ -17,6 +37,8 @@ export function CommandPalette({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [hits, setHits] = useState<SearchHit[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -30,9 +52,80 @@ export function CommandPalette({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange]);
 
-  function close() {
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setHits([]);
+      setLoading(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const q = query.trim();
+    if (q.length < 1) {
+      setHits([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    const t = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          if (!cancelled) setHits([]);
+          return;
+        }
+        const data = (await res.json()) as { results?: SearchHit[] };
+        if (!cancelled) setHits(data.results || []);
+      } catch {
+        if (!cancelled) setHits([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [query, open]);
+
+  const pageMatches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return links.slice(0, 8);
+    return links.filter(
+      (link) =>
+        link.label.toLowerCase().includes(q) ||
+        link.href.toLowerCase().includes(q),
+    );
+  }, [links, query]);
+
+  const groupedHits = useMemo(() => {
+    const order: SearchHit["type"][] = [
+      "booking",
+      "patient",
+      "staff",
+      "lead",
+      "invoice",
+    ];
+    return order
+      .map((type) => ({
+        type,
+        items: hits.filter((h) => h.type === type),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [hits]);
+
+  function go(href: string) {
     setQuery("");
+    setHits([]);
     onOpenChange(false);
+    router.push(href);
   }
 
   if (!open) return null;
@@ -43,49 +136,87 @@ export function CommandPalette({
         type="button"
         className="absolute inset-0 bg-[color-mix(in_srgb,var(--heading)_45%,transparent)]"
         aria-label="Close command palette"
-        onClick={close}
+        onClick={() => onOpenChange(false)}
       />
-      <div className="relative mx-auto mt-[12vh] w-[min(92vw,560px)] overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-surface shadow-[var(--shadow-lg)]">
-        <Command label="Command palette" className="bg-surface">
+      <div className="relative mx-auto mt-[10vh] w-[min(94vw,600px)] overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-surface shadow-[var(--shadow-lg)]">
+        <Command shouldFilter={false} label="Global search" className="bg-surface">
           <div className="flex items-center gap-2 border-b border-[var(--line)] px-3">
             <Search className="h-4 w-4 shrink-0 text-muted" aria-hidden />
             <Command.Input
               value={query}
               onValueChange={setQuery}
-              placeholder="Jump to page…"
+              placeholder="Search staff, patients, bookings, pages…"
               className="h-12 w-full bg-transparent text-sm text-heading outline-none placeholder:text-muted"
-              aria-label="Command search"
+              aria-label="Global search"
+              autoFocus
             />
             <kbd className="hidden rounded border border-[var(--line)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-semibold text-muted sm:inline">
               Esc
             </kbd>
           </div>
-          <Command.List className="max-h-80 overflow-y-auto p-2 scrollbar-thin">
-            <Command.Empty className="px-3 py-3 text-center text-sm text-muted">
-              No matching pages
+          <Command.List className="max-h-[min(70vh,28rem)] overflow-y-auto p-2 scrollbar-thin">
+            <Command.Empty className="px-3 py-8 text-center text-sm text-muted">
+              {loading
+                ? "Searching…"
+                : query.trim()
+                  ? "No matching staff, patients, bookings, or pages"
+                  : "Type a name, phone, or booking no."}
             </Command.Empty>
-            <Command.Group
-              heading="Pages"
-              className="px-1 py-1 text-xs font-semibold uppercase tracking-wide text-muted"
-            >
-              {links.map((link) => (
-                <Command.Item
-                  key={link.href}
-                  value={`${link.label} ${link.href}`}
-                  onSelect={() => {
-                    setQuery("");
-                    onOpenChange(false);
-                    router.push(link.href);
-                  }}
-                  className="flex cursor-pointer items-center justify-between rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-heading aria-selected:bg-[var(--primary-soft)] aria-selected:text-primary"
+
+            {groupedHits.map((group) => {
+              const meta = typeMeta[group.type];
+              const Icon = meta.icon;
+              return (
+                <Command.Group
+                  key={group.type}
+                  heading={meta.label}
+                  className="px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted"
                 >
-                  <span className="font-medium">{link.label}</span>
-                  <span className="text-xs text-muted">
-                    {link.href.replace("/dashboard", "")}
-                  </span>
-                </Command.Item>
-              ))}
-            </Command.Group>
+                  {group.items.map((hit) => (
+                    <Command.Item
+                      key={`${hit.type}-${hit.id}`}
+                      value={`${hit.type} ${hit.keywords} ${hit.title} ${hit.subtitle}`}
+                      onSelect={() => go(hit.href)}
+                      className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-heading aria-selected:bg-[var(--primary-soft)] aria-selected:text-primary"
+                    >
+                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium">{hit.title}</span>
+                        <span className="mt-0.5 block truncate text-xs text-muted">
+                          {hit.subtitle}
+                        </span>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-paper-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                        {hit.type}
+                      </span>
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              );
+            })}
+
+            {pageMatches.length > 0 ? (
+              <Command.Group
+                heading="Pages"
+                className="px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted"
+              >
+                {pageMatches.map((link) => (
+                  <Command.Item
+                    key={link.href}
+                    value={`page ${link.label} ${link.href}`}
+                    onSelect={() => go(link.href)}
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-heading aria-selected:bg-[var(--primary-soft)] aria-selected:text-primary",
+                    )}
+                  >
+                    <span className="font-medium">{link.label}</span>
+                    <span className="text-xs text-muted">
+                      {link.href.replace("/dashboard", "") || "/"}
+                    </span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            ) : null}
           </Command.List>
         </Command>
       </div>

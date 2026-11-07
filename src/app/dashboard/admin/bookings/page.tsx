@@ -4,7 +4,9 @@ import { BookingsWorkspace } from "@/components/dashboard/BookingsWorkspace";
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ patientId?: string }> | { patientId?: string };
+  searchParams?:
+    | Promise<{ patientId?: string; q?: string }>
+    | { patientId?: string; q?: string };
 }) {
   const db = await readDb();
   const params = await Promise.resolve(searchParams);
@@ -23,6 +25,7 @@ export default async function AdminBookingsPage({
       patients={db.patients || []}
       familyUsers={familyUsers}
       initialPatientId={params?.patientId}
+      initialQuery={params?.q}
     />
   );
 }

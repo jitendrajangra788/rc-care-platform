@@ -105,17 +105,32 @@ export function StaffWorkspace({
   attendance,
   payouts,
   bookings,
+  initialQuery = "",
 }: {
   staff: StaffRow[];
   attendance: Attendance[];
   payouts: SalaryPayout[];
   bookings: Booking[];
+  initialQuery?: string;
 }) {
   const router = useRouter();
   const thisMonth = monthKey();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<"all" | Staff["status"]>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(staff[0]?.id || null);
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    const q = initialQuery.trim().toLowerCase();
+    if (q) {
+      const hit = staff.find(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.phone.includes(q) ||
+          (s.email || "").toLowerCase().includes(q) ||
+          s.id.toLowerCase() === q,
+      );
+      if (hit) return hit.id;
+    }
+    return staff[0]?.id || null;
+  });
   const [calMonth, setCalMonth] = useState(thisMonth);
   const [tab, setTab] = useState<DetailTab>("overview");
   const [open, setOpen] = useState(false);

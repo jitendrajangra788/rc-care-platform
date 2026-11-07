@@ -138,6 +138,7 @@ export function BookingsWorkspace({
   patients = [],
   familyUsers = [],
   initialPatientId,
+  initialQuery = "",
 }: {
   bookings: Booking[];
   staff: Staff[];
@@ -145,9 +146,10 @@ export function BookingsWorkspace({
   patients?: Patient[];
   familyUsers?: SessionUser[];
   initialPatientId?: string;
+  initialQuery?: string;
 }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<ViewMode>("list");
   const [open, setOpen] = useState(false);
@@ -187,6 +189,20 @@ export function BookingsWorkspace({
     }, 0);
     return () => window.clearTimeout(id);
   }, [initialPatientId, patients]);
+
+  useEffect(() => {
+    if (!initialQuery) return;
+    const id = window.setTimeout(() => {
+      setQuery(initialQuery);
+      const hit = bookings.find(
+        (b) =>
+          b.id.toLowerCase() === initialQuery.trim().toLowerCase() ||
+          b.patientName.toLowerCase().includes(initialQuery.trim().toLowerCase()),
+      );
+      if (hit) setExpanded(hit.id);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [initialQuery, bookings]);
 
   const counts = useMemo(() => {
     return {

@@ -1,8 +1,13 @@
 import { readDb } from "@/lib/db";
 import { StaffWorkspace } from "@/components/dashboard/StaffWorkspace";
 
-export default async function AdminStaffPage() {
+export default async function AdminStaffPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }> | { q?: string };
+}) {
   const db = await readDb();
+  const params = await Promise.resolve(searchParams);
   const staff = db.staff.map((s) => {
     const user = db.users.find((u) => u.id === s.userId);
     return {
@@ -19,6 +24,7 @@ export default async function AdminStaffPage() {
       attendance={db.attendance}
       payouts={db.salaryPayouts || []}
       bookings={db.bookings}
+      initialQuery={params?.q}
     />
   );
 }

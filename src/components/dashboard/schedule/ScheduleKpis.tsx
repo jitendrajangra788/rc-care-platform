@@ -33,7 +33,7 @@ export function ScheduleKpis({
 }) {
   return (
     <section className="space-y-1.5">
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
           label="Aaj ki duties"
           value={total}

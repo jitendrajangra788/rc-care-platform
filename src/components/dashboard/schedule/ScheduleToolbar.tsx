@@ -75,29 +75,39 @@ export function ScheduleToolbar({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
           <Button
             type="button"
             size="sm"
             variant="secondary"
+            className="shrink-0"
             onClick={onPrev}
             aria-label="Previous"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <p className="font-display text-xl text-heading">{anchorLabel}</p>
-            <p className="text-xs text-muted">
+          <div className="min-w-0 flex-1">
+            <p className="font-display truncate text-lg text-heading sm:text-xl">
+              {anchorLabel}
+            </p>
+            <p className="truncate text-xs text-muted">
               Selected · {formatDate(parseISO(selectedDay + "T12:00:00"))}
             </p>
           </div>
-          <Button type="button" size="sm" variant="secondary" onClick={onNext} aria-label="Next">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="shrink-0"
+            onClick={onNext}
+            aria-label="Next"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <div
             role="tablist"
             aria-label="Calendar view"
@@ -124,7 +134,7 @@ export function ScheduleToolbar({
               type="button"
               size="sm"
               variant="secondary"
-              className="md:hidden"
+              className="w-full md:hidden"
               onClick={onOpenMobileFilters}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" /> Filters

@@ -605,7 +605,7 @@ export function BookingsWorkspace({
         }
       />
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-6">
         {(
           [
             ["all", "All", counts.all],
@@ -700,8 +700,8 @@ export function BookingsWorkspace({
                   key={b.id}
                   className="soft-panel overflow-hidden rounded-[var(--radius-2xl)]"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-2 p-2.5">
-                    <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between sm:p-2.5">
+                    <div className="min-w-0 w-full flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-name text-lg text-heading">{b.patientName}</h3>
                         <StatusBadge status={b.status} />
@@ -709,50 +709,58 @@ export function BookingsWorkspace({
                           <Badge tone="danger">Urgent</Badge>
                         ) : null}
                       </div>
-                      <p className="mt-1 text-sm text-muted">
+                      <p className="break-words text-sm text-muted">
                         {b.id} · {b.careType} · {b.shift} · {formatCurrency(b.amount)}
                         /day
                       </p>
-                      <p className="mt-2 flex items-start gap-1.5 text-sm text-muted">
+                      <p className="flex items-start gap-1.5 break-words text-sm text-muted">
                         <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        {b.address}
-                        {b.area ? ` · ${b.area}` : ""}
+                        <span className="min-w-0">
+                          {b.address}
+                          {b.area ? ` · ${b.area}` : ""}
+                        </span>
                       </p>
-                      <p className="mt-1 flex items-center gap-1.5 text-sm">
-                        <UserRound className="h-3.5 w-3.5 text-primary" />
+                      <p className="flex items-center gap-1.5 text-sm">
+                        <UserRound className="h-3.5 w-3.5 shrink-0 text-primary" />
                         {nurse ? (
-                          <span>
+                          <span className="min-w-0 break-words">
                             {nurse.name} · {nurse.role}
                           </span>
                         ) : (
                           <span className="text-warning">Unassigned</span>
                         )}
                       </p>
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="break-words text-xs text-muted">
                         Start {formatDate(b.startDate)}
                         {b.endDate ? ` → ${formatDate(b.endDate)}` : ""} ·{" "}
                         {formatPhone(b.phone)}
                         {b.patientAge ? ` · Age ${b.patientAge}` : ""}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
                       <Button
                         size="sm"
                         variant="secondary"
+                        className="justify-center"
                         onClick={() => setExpanded(isOpen ? null : b.id)}
                       >
                         {isOpen ? "Hide" : "Manage"}
                       </Button>
-                      <Button size="sm" onClick={() => openEdit(b)}>
+                      <Button
+                        size="sm"
+                        className="justify-center"
+                        onClick={() => openEdit(b)}
+                      >
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-danger"
+                        className="justify-center text-danger"
                         onClick={() => setConfirmDelete(b)}
                       >
-                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span className="sm:inline">Delete</span>
                       </Button>
                     </div>
                   </div>

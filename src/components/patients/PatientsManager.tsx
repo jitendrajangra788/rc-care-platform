@@ -251,45 +251,46 @@ export function PatientsManager({
           const p = row.original;
           const call = telHref(p.phone);
           return (
-            <div className="flex flex-nowrap items-center gap-0.5">
+            <div className="flex flex-wrap items-center gap-1">
               {call ? (
                 <a
                   href={call}
-                  className="btn btn-ghost btn-icon"
+                  className="btn btn-outline btn-sm"
                   aria-label={`Call ${titleCase(p.name)}`}
                   title="Call"
                 >
                   <Phone className="h-3.5 w-3.5" aria-hidden />
+                  <span className="md:hidden">Call</span>
                 </a>
               ) : null}
               <Link
                 href={`/dashboard/admin/patients/${p.id}`}
-                className="btn btn-ghost btn-icon"
+                className="btn btn-outline btn-sm"
                 aria-label={`View ${titleCase(p.name)}`}
                 title="View"
               >
                 <Eye className="h-3.5 w-3.5" aria-hidden />
+                <span className="md:hidden">View</span>
               </Link>
               <Button
                 type="button"
                 size="sm"
-                variant="ghost"
-                className="btn-icon"
+                variant="outline"
                 aria-label={`Edit ${titleCase(p.name)}`}
                 title="Edit"
                 onClick={() => openEdit(p)}
               >
                 <Pencil className="h-3.5 w-3.5" aria-hidden />
+                <span className="md:hidden">Edit</span>
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="px-1.5 text-[11px]"
                 title={p.status === "active" ? "Pause" : "Activate"}
                 onClick={() => setConfirmPause(p)}
               >
-                {p.status === "active" ? "Pause" : "On"}
+                {p.status === "active" ? "Pause" : "Activate"}
               </Button>
             </div>
           );
@@ -323,19 +324,21 @@ export function PatientsManager({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between">
-        <FilterTabs
-          tabs={statusTabs}
-          value={status}
-          onChange={(id) => setStatus(id as StatusFilter)}
-        />
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2">
+        <div className="-mx-0.5 overflow-x-auto px-0.5">
+          <FilterTabs
+            tabs={statusTabs}
+            value={status}
+            onChange={(id) => setStatus(id as StatusFilter)}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
           <label className="sr-only" htmlFor="patient-area-filter">
             Filter by area
           </label>
           <select
             id="patient-area-filter"
-            className="field !w-auto !py-1.5 text-xs font-semibold"
+            className="field w-full !py-2 text-sm font-semibold sm:!w-auto sm:!py-1.5 sm:text-xs"
             value={area}
             onChange={(e) => setArea(e.target.value)}
           >
@@ -346,7 +349,7 @@ export function PatientsManager({
               </option>
             ))}
           </select>
-          <Button type="button" size="sm" onClick={openCreate}>
+          <Button type="button" className="w-full sm:w-auto" onClick={openCreate}>
             <Plus className="h-3.5 w-3.5" aria-hidden />
             Add patient
           </Button>
@@ -371,6 +374,95 @@ export function PatientsManager({
           emptyDescription="Try another status or area filter."
           exportFilename="patients.csv"
           pageSize={10}
+          renderMobileCard={(p) => {
+            const call = telHref(p.phone);
+            return (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <Avatar name={p.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/dashboard/admin/patients/${p.id}`}
+                        className="font-name text-base text-heading hover:text-primary"
+                      >
+                        {titleCase(p.name)}
+                      </Link>
+                      <StatusBadge status={p.status} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted">{p.id}</p>
+                  </div>
+                </div>
+                <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      Phone
+                    </dt>
+                    <dd className="mt-0.5 tabular-nums text-heading">
+                      {formatPhone(p.phone)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      Area
+                    </dt>
+                    <dd className="mt-0.5 text-heading">{titleCase(p.area || "—")}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      Age
+                    </dt>
+                    <dd className="mt-0.5 text-heading">{p.age ? `${p.age}y` : "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      Bookings
+                    </dt>
+                    <dd className="mt-0.5 tabular-nums text-heading">
+                      {bookingCounts[p.id] || 0}
+                    </dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      Created
+                    </dt>
+                    <dd className="mt-0.5 text-heading">{formatDate(p.createdAt)}</dd>
+                  </div>
+                </dl>
+                <div className="grid grid-cols-2 gap-1.5 border-t border-[var(--line)] pt-2.5">
+                  {call ? (
+                    <a href={call} className="btn btn-outline btn-sm justify-center">
+                      <Phone className="h-3.5 w-3.5" /> Call
+                    </a>
+                  ) : null}
+                  <Link
+                    href={`/dashboard/admin/patients/${p.id}`}
+                    className="btn btn-outline btn-sm justify-center"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> View
+                  </Link>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="justify-center"
+                    onClick={() => openEdit(p)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="justify-center"
+                    onClick={() => setConfirmPause(p)}
+                  >
+                    {p.status === "active" ? "Pause" : "Activate"}
+                  </Button>
+                </div>
+              </div>
+            );
+          }}
         />
       )}
 

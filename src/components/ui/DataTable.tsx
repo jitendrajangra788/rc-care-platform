@@ -89,6 +89,7 @@ export function DataTable<T extends RowData>({
   className,
   toolbar,
   enableSelection = true,
+  renderMobileCard,
 }: {
   data: T[];
   columns: DataTableColumn<T>[];
@@ -101,6 +102,8 @@ export function DataTable<T extends RowData>({
   className?: string;
   toolbar?: React.ReactNode;
   enableSelection?: boolean;
+  /** Custom mobile card. If omitted, a readable stacked card is generated. */
+  renderMobileCard?: (row: T) => React.ReactNode;
 }) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -157,14 +160,16 @@ export function DataTable<T extends RowData>({
   const selectedCount = Object.keys(rowSelection).length;
   const rows = table.getFilteredRowModel().rows.map((r) => r.original);
 
+  const pageRows = table.getRowModel().rows;
+
   return (
     <div className={cn("min-w-0 space-y-1.5", className)}>
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2">
         <SearchInput
           value={globalFilter}
           onChange={setGlobalFilter}
           placeholder={searchPlaceholder}
-          className="max-w-sm"
+          className="w-full max-w-none md:max-w-sm"
         />
         <div className="flex flex-wrap items-center gap-1.5">
           {toolbar}
@@ -177,6 +182,7 @@ export function DataTable<T extends RowData>({
             type="button"
             variant="secondary"
             size="sm"
+            className="ml-auto"
             onClick={() => exportCsv(rows, columns, exportFilename)}
             aria-label="Export CSV"
           >
@@ -186,8 +192,83 @@ export function DataTable<T extends RowData>({
         </div>
       </div>
 
-      {/* overflow-x only — never clip vertical content / menus */}
-      <div className="w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-[var(--radius-md)] border border-[var(--line)] bg-surface">
+      {/* Mobile card list — avoids crushed sticky table columns */}
+      <div className="space-y-2 md:hidden">
+        {pageRows.length === 0 ? (
+          <EmptyState title={emptyTitle} description={emptyDescription} />
+        ) : (
+          pageRows.map((row) => (
+            <article
+              key={row.id}
+              className="soft-panel space-y-2.5 rounded-[var(--radius-xl)] p-3"
+              data-state={row.getIsSelected() ? "selected" : undefined}
+            >
+              {enableSelection ? (
+                <label className="flex items-center gap-2 text-xs font-semibold text-muted">
+                  <input
+                    type="checkbox"
+                    aria-label="Select row"
+                    checked={row.getIsSelected()}
+                    onChange={row.getToggleSelectedHandler()}
+                    className="h-4 w-4 rounded border-[var(--line)] accent-[var(--primary)]"
+                  />
+                  Select
+                </label>
+              ) : null}
+              {renderMobileCard ? (
+                renderMobileCard(row.original)
+              ) : (
+                <div className="space-y-2">
+                  {row
+                    .getVisibleCells()
+                    .filter((cell) => cell.column.id !== "select")
+                    .map((cell) => {
+                      const header = cell.column.columnDef.header;
+                      const label =
+                        typeof header === "string"
+                          ? header
+                          : cell.column.id === "actions"
+                            ? "Actions"
+                            : cell.column.id;
+                      return (
+                        <div
+                          key={cell.id}
+                          className={cn(
+                            "min-w-0",
+                            cell.column.id === "actions"
+                              ? "border-t border-[var(--line)] pt-2"
+                              : "grid grid-cols-[5.5rem_1fr] items-start gap-2",
+                          )}
+                        >
+                          {cell.column.id !== "actions" ? (
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                              {label}
+                            </span>
+                          ) : null}
+                          <div
+                            className={cn(
+                              "min-w-0 break-words text-sm text-heading",
+                              cell.column.id === "actions" &&
+                                "flex flex-wrap gap-1.5",
+                            )}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </article>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-[var(--radius-md)] border border-[var(--line)] bg-surface md:block">
         <table className="data-table w-full min-w-[36rem] border-separate border-spacing-0 text-left text-sm">
           <thead className="bg-[var(--surface-muted)] text-xs uppercase tracking-wide text-muted">
             {table.getHeaderGroups().map((hg) => (
@@ -232,14 +313,14 @@ export function DataTable<T extends RowData>({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={tableColumns.length} className="p-4">
                   <EmptyState title={emptyTitle} description={emptyDescription} />
                 </td>
               </tr>
             ) : (
-              table.getRowModel().rows.map((row) => (
+              pageRows.map((row) => (
                 <tr
                   key={row.id}
                   className="group border-t border-[var(--line)] hover:bg-[var(--surface-muted)]/60"

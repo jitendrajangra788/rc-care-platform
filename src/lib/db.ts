@@ -2,17 +2,25 @@ import { promises as fs } from "fs";
 import os from "os";
 import path from "path";
 import { defaultSettings } from "./defaults";
+import {
+  hasRemoteDb,
+  remoteReadDb,
+  remoteStoreLabel,
+  remoteWriteDb,
+} from "./db-remote";
 import { seedDb } from "./seed";
 import type { DbShape } from "./types";
 
 /**
- * Local: `.data/db.json` (gitignored, avoids Next hot-reload).
- * Vercel/serverless: `/tmp` is writable; project FS is read-only — fall back to memory.
+ * Local: `.data/db.json` (gitignored).
+ * Vercel/serverless: Upstash / Vercel KV (durable). Falls back to /tmp only if
+ * no Redis env is configured (data will NOT survive cold starts).
  */
 const legacyDbPath = path.join(process.cwd(), "data", "db.json");
 const localDbPath = path.join(process.cwd(), ".data", "db.json");
 const tmpDbPath = path.join(os.tmpdir(), "rc-care-db.json");
-const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME != null;
+const isServerless =
+  process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME != null;
 
 function cloneSeed(): DbShape {
   return ensureArrays(JSON.parse(JSON.stringify(seedDb)) as DbShape);
@@ -169,11 +177,13 @@ function mergeMigrated(parsed: DbShape): DbShape {
   return merged;
 }
 
-type StoreMode = "file" | "memory";
+type StoreMode = "remote" | "file" | "memory";
 
 let storeMode: StoreMode | null = null;
 let activeDbPath = localDbPath;
 let memoryCache: { mtimeMs: number; db: DbShape } | null = null;
+let remoteBootstrapped = false;
+let warnedEphemeral = false;
 
 async function canUsePath(filePath: string): Promise<boolean> {
   try {
@@ -189,6 +199,19 @@ async function canUsePath(filePath: string): Promise<boolean> {
 
 async function resolveStore(): Promise<{ mode: StoreMode; filePath: string }> {
   if (storeMode) return { mode: storeMode, filePath: activeDbPath };
+
+  if (hasRemoteDb()) {
+    storeMode = "remote";
+    activeDbPath = "remote://upstash";
+    return { mode: "remote", filePath: activeDbPath };
+  }
+
+  if (isServerless && !warnedEphemeral) {
+    warnedEphemeral = true;
+    console.warn(
+      "[db] No KV/Upstash env on Vercel — add/update/delete will NOT persist. Add Vercel KV (KV_REST_API_URL + KV_REST_API_TOKEN).",
+    );
+  }
 
   const candidates = isServerless ? [tmpDbPath, localDbPath] : [localDbPath, tmpDbPath];
 
@@ -222,18 +245,39 @@ async function writeJsonFile(filePath: string, db: DbShape) {
   await fs.writeFile(filePath, JSON.stringify(db, null, 2), "utf8");
 }
 
-async function ensureDb() {
-  const store = await resolveStore();
-  if (store.mode === "memory") {
-    if (!memoryCache) memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
+function normalizeLoaded(parsed: DbShape): DbShape {
+  return needsMigrate(parsed) ? mergeMigrated(parsed) : ensureArrays(parsed);
+}
+
+async function ensureRemoteDb() {
+  if (remoteBootstrapped && memoryCache) return;
+  const remote = await remoteReadDb();
+  if (remote) {
+    const next = normalizeLoaded(remote);
+    memoryCache = { mtimeMs: Date.now(), db: next };
+    // Re-save if migration reshaped the document
+    if (needsMigrate(remote)) {
+      await remoteWriteDb(next);
+    }
+    remoteBootstrapped = true;
     return;
   }
 
-  const filePath = store.filePath;
+  // First boot on KV — seed once and persist
+  const seeded = cloneSeed();
+  memoryCache = { mtimeMs: Date.now(), db: seeded };
+  const ok = await remoteWriteDb(seeded);
+  if (!ok) {
+    console.error("[db] Failed to bootstrap remote DB — falling back to memory");
+    storeMode = "memory";
+  }
+  remoteBootstrapped = true;
+}
+
+async function ensureFileDb(filePath: string) {
   try {
     let parsed = await readJsonFile(filePath);
     if (!parsed) {
-      // One-time migrate from legacy data/db.json
       const legacy = await readJsonFile(legacyDbPath);
       if (legacy) {
         parsed = legacy;
@@ -254,26 +298,62 @@ async function ensureDb() {
       return;
     }
 
+    const next = normalizeLoaded(parsed);
     if (needsMigrate(parsed)) {
-      const merged = mergeMigrated(parsed);
       try {
-        await writeJsonFile(filePath, merged);
+        await writeJsonFile(filePath, next);
       } catch {
-        /* keep merged in memory if write fails */
+        /* keep in memory */
       }
-      memoryCache = { mtimeMs: Date.now(), db: merged };
-      return;
     }
-
-    memoryCache = { mtimeMs: Date.now(), db: parsed };
+    memoryCache = { mtimeMs: Date.now(), db: next };
   } catch {
     storeMode = "memory";
     memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
   }
 }
 
+async function ensureDb() {
+  const store = await resolveStore();
+  if (store.mode === "remote") {
+    await ensureRemoteDb();
+    return;
+  }
+  if (store.mode === "memory") {
+    if (!memoryCache) memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
+    return;
+  }
+  await ensureFileDb(store.filePath);
+}
+
+export async function getDbStoreInfo() {
+  const store = await resolveStore();
+  return {
+    mode: store.mode,
+    remote: remoteStoreLabel(),
+    durable: store.mode === "remote" || (store.mode === "file" && !isServerless),
+    serverless: isServerless,
+    path: store.filePath,
+  };
+}
+
 export async function readDb(): Promise<DbShape> {
   await ensureDb();
+
+  if (storeMode === "remote") {
+    // Always re-read from KV so every serverless instance sees latest writes
+    const remote = await remoteReadDb();
+    if (remote) {
+      const next = ensureArrays(remote);
+      memoryCache = { mtimeMs: Date.now(), db: next };
+      return next;
+    }
+    if (memoryCache) return memoryCache.db;
+    const seeded = cloneSeed();
+    memoryCache = { mtimeMs: Date.now(), db: seeded };
+    return seeded;
+  }
+
   if (storeMode === "memory") {
     if (!memoryCache) memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
     return memoryCache.db;
@@ -302,6 +382,14 @@ export async function writeDb(db: DbShape) {
   const next = ensureArrays(db);
   memoryCache = { mtimeMs: Date.now(), db: next };
 
+  if (storeMode === "remote") {
+    const ok = await remoteWriteDb(next);
+    if (!ok) {
+      console.error("[db] remote write failed — data may not persist across instances");
+    }
+    return;
+  }
+
   if (storeMode === "memory") return;
 
   try {
@@ -313,7 +401,6 @@ export async function writeDb(db: DbShape) {
       /* keep Date.now mtime */
     }
   } catch {
-    // Serverless / read-only FS — memory remains source of truth for this instance
     storeMode = "memory";
   }
 }
@@ -322,6 +409,11 @@ export async function resetDb() {
   const seeded = cloneSeed();
   memoryCache = { mtimeMs: Date.now(), db: seeded };
   const store = await resolveStore();
+  if (store.mode === "remote") {
+    await remoteWriteDb(seeded);
+    remoteBootstrapped = true;
+    return seeded;
+  }
   if (store.mode === "file") {
     try {
       await writeJsonFile(store.filePath, seeded);

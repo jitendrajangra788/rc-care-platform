@@ -25,15 +25,28 @@ function redisFromEnv(): Redis | null {
   return new Redis({ url, token });
 }
 
-export function hasRemoteDb(): boolean {
-  return Boolean(
+export function remoteEnvFlags() {
+  const url =
     process.env.KV_REST_API_URL ||
-      process.env.UPSTASH_REDIS_REST_URL ||
-      (process.env.REDIS_URL?.startsWith("http") &&
-        (process.env.KV_REST_API_TOKEN ||
-          process.env.UPSTASH_REDIS_REST_TOKEN ||
-          process.env.REDIS_TOKEN)),
-  );
+    process.env.UPSTASH_REDIS_REST_URL ||
+    (process.env.REDIS_URL?.startsWith("http") ? process.env.REDIS_URL : undefined);
+  const token =
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.REDIS_TOKEN;
+  return {
+    hasKvUrl: Boolean(process.env.KV_REST_API_URL),
+    hasKvToken: Boolean(process.env.KV_REST_API_TOKEN),
+    hasUpstashUrl: Boolean(process.env.UPSTASH_REDIS_REST_URL),
+    hasUpstashToken: Boolean(process.env.UPSTASH_REDIS_REST_TOKEN),
+    hasRedisUrlHttp: Boolean(process.env.REDIS_URL?.startsWith("http")),
+    hasRedisToken: Boolean(process.env.REDIS_TOKEN),
+    ready: Boolean(url && token && url.startsWith("http")),
+  };
+}
+
+export function hasRemoteDb(): boolean {
+  return remoteEnvFlags().ready;
 }
 
 function getClient(): RemoteClient | null {

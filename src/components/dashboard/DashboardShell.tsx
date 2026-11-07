@@ -49,6 +49,7 @@ import type { SessionUser } from "@/lib/types";
 import { ActivityBell } from "@/components/dashboard/ActivityBell";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 import { CommandPalette } from "@/components/dashboard/CommandPalette";
+import { RecordSearchBar } from "@/components/dashboard/RecordSearchBar";
 import { SessionTimeoutDialog } from "@/components/dashboard/SessionTimeoutDialog";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import { Badge } from "@/components/ui/Badge";
@@ -143,6 +144,8 @@ function DashboardShellInner({
   const { t, locale, toggle } = useLocale();
   const [open, setOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [headerQuery, setHeaderQuery] = useState("");
+  const [cmdQuery, setCmdQuery] = useState("");
   const mounted = useSyncExternalStore(
     subscribeAlwaysMounted,
     getClientMounted,
@@ -362,7 +365,15 @@ function DashboardShellInner({
         user.role === "nurse" && "nurse-ops",
       )}
     >
-      <CommandPalette links={flatLinks} open={cmdOpen} onOpenChange={setCmdOpen} />
+      <CommandPalette
+        links={flatLinks}
+        open={cmdOpen}
+        initialQuery={cmdQuery}
+        onOpenChange={(next) => {
+          setCmdOpen(next);
+          if (!next) setCmdQuery("");
+        }}
+      />
       <SessionTimeoutDialog />
       {/* Desktop sidebar */}
       <aside
@@ -425,25 +436,27 @@ function DashboardShellInner({
 
                 <button
                   type="button"
-                  onClick={() => setCmdOpen(true)}
+                  onClick={() => {
+                    setCmdQuery(headerQuery);
+                    setCmdOpen(true);
+                  }}
                   className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper-2 text-heading md:hidden"
                   aria-label={t.searchPages}
                 >
                   <Search className="h-4 w-4" />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setCmdOpen(true)}
-                  className="field field-with-icon relative hidden min-w-0 max-w-md flex-1 !cursor-pointer items-center rounded-full !py-1.5 pr-3 text-left text-sm text-muted md:flex"
-                  aria-label={t.searchPages}
-                >
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                  <span className="truncate">{t.searchPages}</span>
-                  <kbd className="ml-auto rounded border border-[var(--line)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-semibold text-muted">
-                    {t.commandHint}
-                  </kbd>
-                </button>
+                <RecordSearchBar
+                  className="hidden max-w-xl md:flex"
+                  value={headerQuery}
+                  onChange={setHeaderQuery}
+                  placeholder="Staff, patient, booking no…"
+                  onSearch={(q) => {
+                    setHeaderQuery(q);
+                    setCmdQuery(q);
+                    setCmdOpen(true);
+                  }}
+                />
               </div>
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">

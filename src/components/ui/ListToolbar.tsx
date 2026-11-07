@@ -1,5 +1,6 @@
 "use client";
 
+import { FormEvent } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,12 +12,13 @@ export type FilterChip = {
 export function ListToolbar({
   query,
   onQueryChange,
-  placeholder = "Search…",
+  placeholder = "Staff, patient, booking no…",
   filters,
   activeFilter,
   onFilterChange,
   actions,
   className,
+  onSearch,
 }: {
   query: string;
   onQueryChange: (value: string) => void;
@@ -26,7 +28,14 @@ export function ListToolbar({
   onFilterChange?: (id: string) => void;
   actions?: React.ReactNode;
   className?: string;
+  /** Optional explicit search submit (Enter / Search button). Live filter still uses onQueryChange. */
+  onSearch?: (value: string) => void;
 }) {
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    onSearch?.(query.trim());
+  }
+
   return (
     <div
       className={cn(
@@ -34,16 +43,28 @@ export function ListToolbar({
         className,
       )}
     >
-      <div className="relative min-w-0 flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-        <input
-          className="field field-with-icon"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder={placeholder}
-          aria-label={placeholder}
-        />
-      </div>
+      <form
+        onSubmit={submit}
+        className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-lg border border-[var(--line)] bg-surface"
+        role="search"
+      >
+        <label className="flex min-w-0 flex-1 items-center gap-2 px-3">
+          <Search className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+          <input
+            className="h-10 min-w-0 flex-1 bg-transparent text-sm text-heading outline-none placeholder:text-muted"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder={placeholder}
+            aria-label={placeholder}
+          />
+        </label>
+        <button
+          type="submit"
+          className="h-10 shrink-0 bg-primary px-4 text-sm font-semibold text-[var(--sidebar-fg)] transition hover:opacity-95"
+        >
+          Search
+        </button>
+      </form>
       <div className="flex flex-wrap items-center gap-2">
         {filters?.map((f) => (
           <button

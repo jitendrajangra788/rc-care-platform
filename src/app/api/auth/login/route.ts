@@ -21,74 +21,79 @@ function rateLimit(key: string) {
 }
 
 export async function POST(req: Request) {
-  const json = (await req.json().catch(() => null)) as {
-    email?: string;
-    password?: string;
-  } | null;
+  try {
+    const json = (await req.json().catch(() => null)) as {
+      email?: string;
+      password?: string;
+    } | null;
 
-  const email = String(json?.email || "")
-    .trim()
-    .toLowerCase();
-  const password = String(json?.password ?? "");
+    const email = String(json?.email || "")
+      .trim()
+      .toLowerCase();
+    const password = String(json?.password ?? "");
 
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email and password required" }, { status: 400 });
-  }
-
-  const ip = req.headers.get("x-forwarded-for") || "local";
-  const rateKey = `${ip}:${email}`;
-  if (!rateLimit(rateKey)) {
-    return NextResponse.json({ error: "Too many attempts. Try later." }, { status: 429 });
-  }
-
-  const db = await readDb();
-  const user = db.users.find((u) => u.email.toLowerCase() === email);
-  if (!user || user.active === false || !verifyPassword(password, user.password)) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  }
-
-  attempts.delete(rateKey);
-
-  const role = normalizeRole(user.role);
-  const idx = db.users.findIndex((u) => u.id === user.id);
-  if (idx >= 0) {
-    const next = { ...db.users[idx], active: true as const };
-    if (!isHashedPassword(next.password)) {
-      next.password = hashPassword(password);
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
-    db.users[idx] = next;
+
+    const ip = req.headers.get("x-forwarded-for") || "local";
+    const rateKey = `${ip}:${email}`;
+    if (!rateLimit(rateKey)) {
+      return NextResponse.json({ error: "Too many attempts. Try later." }, { status: 429 });
+    }
+
+    const db = await readDb();
+    const user = db.users.find((u) => u.email.toLowerCase() === email);
+    if (!user || user.active === false || !verifyPassword(password, user.password)) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    attempts.delete(rateKey);
+
+    const role = normalizeRole(user.role);
+    const idx = db.users.findIndex((u) => u.id === user.id);
+    if (idx >= 0) {
+      const next = { ...db.users[idx], active: true as const };
+      if (!isHashedPassword(next.password)) {
+        next.password = hashPassword(password);
+      }
+      db.users[idx] = next;
+    }
+
+    pushAudit(db, {
+      action: "auth.login",
+      entity: "user",
+      detail: `${user.email} · ${role}`,
+      actorId: user.id,
+      actorName: user.name,
+    });
+
+    // Persist in background so the login response stays snappy
+    void writeDb(db).catch(() => {});
+
+    const res = NextResponse.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role,
+        phone: user.phone,
+        active: true,
+      },
+      redirectTo: dashboardPathForRole(role),
+    });
+
+    res.cookies.set(SESSION_COOKIE, signSession({ id: user.id, role }), {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return res;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Login service unavailable";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  pushAudit(db, {
-    action: "auth.login",
-    entity: "user",
-    detail: `${user.email} · ${role}`,
-    actorId: user.id,
-    actorName: user.name,
-  });
-
-  // Persist in background so the login response stays snappy
-  void writeDb(db).catch(() => {});
-
-  const res = NextResponse.json({
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role,
-      phone: user.phone,
-      active: true,
-    },
-    redirectTo: dashboardPathForRole(role),
-  });
-
-  res.cookies.set(SESSION_COOKIE, signSession({ id: user.id, role }), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-    secure: process.env.NODE_ENV === "production",
-  });
-
-  return res;
 }

@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { toast } from "@/components/ui/toast";
 
-const showDemos =
-  process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_LOGINS === "true";
+// Show demo accounts unless explicitly disabled (helpful on Vercel preview/demo).
+const showDemos = process.env.NEXT_PUBLIC_DEMO_LOGINS !== "false";
 
 const demos = [
   {

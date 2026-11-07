@@ -1,12 +1,22 @@
 import { promises as fs } from "fs";
+import os from "os";
 import path from "path";
 import { defaultSettings } from "./defaults";
 import { seedDb } from "./seed";
 import type { DbShape } from "./types";
 
-/** Keep DB outside the hot-reload watch surface when possible (.data is gitignored). */
+/**
+ * Local: `.data/db.json` (gitignored, avoids Next hot-reload).
+ * Vercel/serverless: `/tmp` is writable; project FS is read-only — fall back to memory.
+ */
 const legacyDbPath = path.join(process.cwd(), "data", "db.json");
-const dbPath = path.join(process.cwd(), ".data", "db.json");
+const localDbPath = path.join(process.cwd(), ".data", "db.json");
+const tmpDbPath = path.join(os.tmpdir(), "rc-care-db.json");
+const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME != null;
+
+function cloneSeed(): DbShape {
+  return ensureArrays(JSON.parse(JSON.stringify(seedDb)) as DbShape);
+}
 
 function ensureArrays(db: DbShape): DbShape {
   db.attendance = db.attendance || [];
@@ -75,153 +85,251 @@ function needsMigrate(db: Partial<DbShape>) {
   return false;
 }
 
-async function ensureDb() {
-  await fs.mkdir(path.dirname(dbPath), { recursive: true });
-  try {
-    try {
-      await fs.access(dbPath);
-    } catch {
-      // One-time migrate from legacy data/db.json so existing demos keep working
-      try {
-        await fs.access(legacyDbPath);
-        await fs.copyFile(legacyDbPath, dbPath);
-      } catch {
-        /* fresh install */
+function mergeMigrated(parsed: DbShape): DbShape {
+  const merged = ensureArrays({
+    ...seedDb,
+    users: (() => {
+      const existing = parsed.users?.length ? [...parsed.users] : [];
+      for (const seeded of seedDb.users) {
+        if (!existing.some((u) => u.email.toLowerCase() === seeded.email.toLowerCase())) {
+          existing.push(seeded);
+        }
       }
-    }
-    await fs.access(dbPath);
-    const raw = await fs.readFile(dbPath, "utf8");
-    const parsed = JSON.parse(raw) as DbShape;
-    if (needsMigrate(parsed)) {
-      const merged = ensureArrays({
-        ...seedDb,
-        users: (() => {
-          const existing = parsed.users?.length ? [...parsed.users] : [];
-          for (const seeded of seedDb.users) {
-            if (!existing.some((u) => u.email.toLowerCase() === seeded.email.toLowerCase())) {
-              existing.push(seeded);
-            }
-          }
-          return existing.length ? existing : seedDb.users;
-        })(),
-        staff: parsed.staff?.length
-          ? parsed.staff.map((s) => {
-              const seeded = seedDb.staff.find((x) => x.id === s.id);
-              return {
-                ...s,
-                email: s.email || parsed.users?.find((u) => u.id === s.userId)?.email,
-                salaryMonthly: s.salaryMonthly ?? seeded?.salaryMonthly ?? 20000,
-                salaryPerShift: s.salaryPerShift ?? seeded?.salaryPerShift ?? 700,
-                performanceScore: s.performanceScore ?? 80,
-              };
-            })
-          : seedDb.staff,
-        bookings: (parsed.bookings?.length ? parsed.bookings : seedDb.bookings).map((b) => {
-          const seeded = seedDb.bookings.find((x) => x.id === b.id);
+      return existing.length ? existing : seedDb.users;
+    })(),
+    staff: parsed.staff?.length
+      ? parsed.staff.map((s) => {
+          const seeded = seedDb.staff.find((x) => x.id === s.id);
           return {
-            ...b,
-            lat: b.lat ?? seeded?.lat,
-            lng: b.lng ?? seeded?.lng,
-            geofenceRadiusM: b.geofenceRadiusM ?? seeded?.geofenceRadiusM ?? 250,
-            upiId: b.upiId || "roshancare@upi",
+            ...s,
+            email: s.email || parsed.users?.find((u) => u.id === s.userId)?.email,
+            salaryMonthly: s.salaryMonthly ?? seeded?.salaryMonthly ?? 20000,
+            salaryPerShift: s.salaryPerShift ?? seeded?.salaryPerShift ?? 700,
+            performanceScore: s.performanceScore ?? 80,
           };
-        }),
-        attendance: (parsed.attendance || []).map((a) => ({
-          ...a,
-          dutyDate: a.dutyDate || a.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
-          type: a.type === "present" ? "morning" : a.type === "checkout" ? "evening" : a.type,
-        })),
-        salaryPayouts: parsed.salaryPayouts || [],
-        monthlySalaries: parsed.monthlySalaries || seedDb.monthlySalaries || [],
-        careLocations: parsed.careLocations?.length
-          ? parsed.careLocations
-          : seedDb.careLocations,
-        siteAllotments: parsed.siteAllotments?.length
-          ? parsed.siteAllotments
-          : seedDb.siteAllotments,
-        medications: parsed.medications || seedDb.medications,
-        activities: parsed.activities || seedDb.activities || [],
-        careNotes: parsed.careNotes?.length ? parsed.careNotes : seedDb.careNotes,
-        invoices: parsed.invoices?.length ? parsed.invoices : seedDb.invoices,
-        leads: parsed.leads?.length ? parsed.leads : seedDb.leads,
-        leaves: parsed.leaves?.length ? parsed.leaves : seedDb.leaves || [],
-        nurseAvailability: parsed.nurseAvailability?.length
-          ? parsed.nurseAvailability
-          : seedDb.nurseAvailability || [],
-        documents: parsed.documents || [],
-        sosAlerts: parsed.sosAlerts || [],
-        medSchedules: parsed.medSchedules || seedDb.medSchedules || [],
-        advances: parsed.advances || [],
-        doctorNotes: parsed.doctorNotes || [],
-        callLogs: parsed.callLogs || [],
-        auditLogs: parsed.auditLogs || [],
-        patients: parsed.patients?.length ? parsed.patients : seedDb.patients || [],
-        carePlans: parsed.carePlans || seedDb.carePlans || [],
-        vitals: parsed.vitals || seedDb.vitals || [],
-        careReports: parsed.careReports || seedDb.careReports || [],
-        complaints: parsed.complaints || seedDb.complaints || [],
-        expenses: parsed.expenses || seedDb.expenses || [],
-        payments: parsed.payments || seedDb.payments || [],
-        notifications: parsed.notifications || seedDb.notifications || [],
-        settings: { ...defaultSettings, ...(parsed.settings || seedDb.settings || {}) },
-      });
-      // Backfill patientId on bookings from patients by phone/name
-      if (merged.patients?.length) {
-        merged.bookings = merged.bookings.map((b) => {
-          if (b.patientId) return b;
-          const hit = merged.patients.find(
-            (p) =>
-              p.phone.replace(/\s/g, "") === b.phone.replace(/\s/g, "") ||
-              p.name.toLowerCase() === b.patientName.toLowerCase(),
-          );
-          return hit ? { ...b, patientId: hit.id } : b;
-        });
-      }
-      await fs.writeFile(dbPath, JSON.stringify(merged, null, 2), "utf8");
-    }
+        })
+      : seedDb.staff,
+    bookings: (parsed.bookings?.length ? parsed.bookings : seedDb.bookings).map((b) => {
+      const seeded = seedDb.bookings.find((x) => x.id === b.id);
+      return {
+        ...b,
+        lat: b.lat ?? seeded?.lat,
+        lng: b.lng ?? seeded?.lng,
+        geofenceRadiusM: b.geofenceRadiusM ?? seeded?.geofenceRadiusM ?? 250,
+        upiId: b.upiId || "roshancare@upi",
+      };
+    }),
+    attendance: (parsed.attendance || []).map((a) => ({
+      ...a,
+      dutyDate: a.dutyDate || a.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+      type: a.type === "present" ? "morning" : a.type === "checkout" ? "evening" : a.type,
+    })),
+    salaryPayouts: parsed.salaryPayouts || [],
+    monthlySalaries: parsed.monthlySalaries || seedDb.monthlySalaries || [],
+    careLocations: parsed.careLocations?.length ? parsed.careLocations : seedDb.careLocations,
+    siteAllotments: parsed.siteAllotments?.length ? parsed.siteAllotments : seedDb.siteAllotments,
+    medications: parsed.medications || seedDb.medications,
+    activities: parsed.activities || seedDb.activities || [],
+    careNotes: parsed.careNotes?.length ? parsed.careNotes : seedDb.careNotes,
+    invoices: parsed.invoices?.length ? parsed.invoices : seedDb.invoices,
+    leads: parsed.leads?.length ? parsed.leads : seedDb.leads,
+    leaves: parsed.leaves?.length ? parsed.leaves : seedDb.leaves || [],
+    nurseAvailability: parsed.nurseAvailability?.length
+      ? parsed.nurseAvailability
+      : seedDb.nurseAvailability || [],
+    documents: parsed.documents || [],
+    sosAlerts: parsed.sosAlerts || [],
+    medSchedules: parsed.medSchedules || seedDb.medSchedules || [],
+    advances: parsed.advances || [],
+    doctorNotes: parsed.doctorNotes || [],
+    callLogs: parsed.callLogs || [],
+    auditLogs: parsed.auditLogs || [],
+    patients: parsed.patients?.length ? parsed.patients : seedDb.patients || [],
+    carePlans: parsed.carePlans || seedDb.carePlans || [],
+    vitals: parsed.vitals || seedDb.vitals || [],
+    careReports: parsed.careReports || seedDb.careReports || [],
+    complaints: parsed.complaints || seedDb.complaints || [],
+    expenses: parsed.expenses || seedDb.expenses || [],
+    payments: parsed.payments || seedDb.payments || [],
+    notifications: parsed.notifications || seedDb.notifications || [],
+    settings: { ...defaultSettings, ...(parsed.settings || seedDb.settings || {}) },
+  });
+
+  if (merged.patients?.length) {
+    merged.bookings = merged.bookings.map((b) => {
+      if (b.patientId) return b;
+      const hit = merged.patients.find(
+        (p) =>
+          p.phone.replace(/\s/g, "") === b.phone.replace(/\s/g, "") ||
+          p.name.toLowerCase() === b.patientName.toLowerCase(),
+      );
+      return hit ? { ...b, patientId: hit.id } : b;
+    });
+  }
+  return merged;
+}
+
+type StoreMode = "file" | "memory";
+
+let storeMode: StoreMode | null = null;
+let activeDbPath = localDbPath;
+let memoryCache: { mtimeMs: number; db: DbShape } | null = null;
+
+async function canUsePath(filePath: string): Promise<boolean> {
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    const probe = `${filePath}.probe`;
+    await fs.writeFile(probe, "ok", "utf8");
+    await fs.unlink(probe).catch(() => {});
+    return true;
   } catch {
-    await fs.writeFile(dbPath, JSON.stringify(seedDb, null, 2), "utf8");
+    return false;
   }
 }
 
-let memoryCache: { mtimeMs: number; db: DbShape } | null = null;
+async function resolveStore(): Promise<{ mode: StoreMode; filePath: string }> {
+  if (storeMode) return { mode: storeMode, filePath: activeDbPath };
+
+  const candidates = isServerless ? [tmpDbPath, localDbPath] : [localDbPath, tmpDbPath];
+
+  for (const candidate of candidates) {
+    if (await canUsePath(candidate)) {
+      storeMode = "file";
+      activeDbPath = candidate;
+      return { mode: "file", filePath: candidate };
+    }
+  }
+
+  storeMode = "memory";
+  activeDbPath = tmpDbPath;
+  if (!memoryCache) {
+    memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
+  }
+  return { mode: "memory", filePath: activeDbPath };
+}
+
+async function readJsonFile(filePath: string): Promise<DbShape | null> {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return ensureArrays(JSON.parse(raw) as DbShape);
+  } catch {
+    return null;
+  }
+}
+
+async function writeJsonFile(filePath: string, db: DbShape) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, JSON.stringify(db, null, 2), "utf8");
+}
+
+async function ensureDb() {
+  const store = await resolveStore();
+  if (store.mode === "memory") {
+    if (!memoryCache) memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
+    return;
+  }
+
+  const filePath = store.filePath;
+  try {
+    let parsed = await readJsonFile(filePath);
+    if (!parsed) {
+      // One-time migrate from legacy data/db.json
+      const legacy = await readJsonFile(legacyDbPath);
+      if (legacy) {
+        parsed = legacy;
+        await writeJsonFile(filePath, legacy).catch(() => {});
+      }
+    }
+
+    if (!parsed) {
+      const seeded = cloneSeed();
+      try {
+        await writeJsonFile(filePath, seeded);
+      } catch {
+        storeMode = "memory";
+        memoryCache = { mtimeMs: Date.now(), db: seeded };
+        return;
+      }
+      memoryCache = { mtimeMs: Date.now(), db: seeded };
+      return;
+    }
+
+    if (needsMigrate(parsed)) {
+      const merged = mergeMigrated(parsed);
+      try {
+        await writeJsonFile(filePath, merged);
+      } catch {
+        /* keep merged in memory if write fails */
+      }
+      memoryCache = { mtimeMs: Date.now(), db: merged };
+      return;
+    }
+
+    memoryCache = { mtimeMs: Date.now(), db: parsed };
+  } catch {
+    storeMode = "memory";
+    memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
+  }
+}
 
 export async function readDb(): Promise<DbShape> {
   await ensureDb();
+  if (storeMode === "memory") {
+    if (!memoryCache) memoryCache = { mtimeMs: Date.now(), db: cloneSeed() };
+    return memoryCache.db;
+  }
+
   try {
-    const stat = await fs.stat(dbPath);
+    const stat = await fs.stat(activeDbPath);
     if (memoryCache && memoryCache.mtimeMs === stat.mtimeMs) {
       return memoryCache.db;
     }
-    const raw = await fs.readFile(dbPath, "utf8");
+    const raw = await fs.readFile(activeDbPath, "utf8");
     const db = ensureArrays(JSON.parse(raw) as DbShape);
     memoryCache = { mtimeMs: stat.mtimeMs, db };
     return db;
   } catch {
-    const raw = await fs.readFile(dbPath, "utf8");
-    const db = ensureArrays(JSON.parse(raw) as DbShape);
-    memoryCache = { mtimeMs: Date.now(), db };
-    return db;
+    if (memoryCache) return memoryCache.db;
+    const seeded = cloneSeed();
+    memoryCache = { mtimeMs: Date.now(), db: seeded };
+    storeMode = "memory";
+    return seeded;
   }
 }
 
 export async function writeDb(db: DbShape) {
   await ensureDb();
   const next = ensureArrays(db);
-  await fs.writeFile(dbPath, JSON.stringify(next, null, 2), "utf8");
+  memoryCache = { mtimeMs: Date.now(), db: next };
+
+  if (storeMode === "memory") return;
+
   try {
-    const stat = await fs.stat(dbPath);
-    memoryCache = { mtimeMs: stat.mtimeMs, db: next };
+    await writeJsonFile(activeDbPath, next);
+    try {
+      const stat = await fs.stat(activeDbPath);
+      memoryCache = { mtimeMs: stat.mtimeMs, db: next };
+    } catch {
+      /* keep Date.now mtime */
+    }
   } catch {
-    memoryCache = { mtimeMs: Date.now(), db: next };
+    // Serverless / read-only FS — memory remains source of truth for this instance
+    storeMode = "memory";
   }
 }
 
 export async function resetDb() {
-  await fs.mkdir(path.dirname(dbPath), { recursive: true });
-  await fs.writeFile(dbPath, JSON.stringify(seedDb, null, 2), "utf8");
-  memoryCache = null;
-  return seedDb;
+  const seeded = cloneSeed();
+  memoryCache = { mtimeMs: Date.now(), db: seeded };
+  const store = await resolveStore();
+  if (store.mode === "file") {
+    try {
+      await writeJsonFile(store.filePath, seeded);
+    } catch {
+      storeMode = "memory";
+    }
+  }
+  return seeded;
 }
 
 export async function saveDataUrlImage(
@@ -232,9 +340,18 @@ export async function saveDataUrlImage(
   const match = /^data:(image\/[a-zA-Z0-9.+-]+|application\/pdf);base64,(.+)$/.exec(dataUrl);
   if (!match) throw new Error("Invalid file data");
   const ext = match[1].includes("png") ? "png" : match[1].includes("pdf") ? "pdf" : "jpg";
-  const dir = path.join(process.cwd(), "public", "uploads", folder);
-  await fs.mkdir(dir, { recursive: true });
   const fileName = `${prefix}-${Date.now()}.${ext}`;
-  await fs.writeFile(path.join(dir, fileName), Buffer.from(match[2], "base64"));
-  return `/uploads/${folder}/${fileName}`;
+
+  const publicDir = path.join(process.cwd(), "public", "uploads", folder);
+  try {
+    await fs.mkdir(publicDir, { recursive: true });
+    await fs.writeFile(path.join(publicDir, fileName), Buffer.from(match[2], "base64"));
+    return `/uploads/${folder}/${fileName}`;
+  } catch {
+    // Vercel: persist under /tmp (not publicly served; still keeps API from crashing)
+    const tmpDir = path.join(os.tmpdir(), "rc-uploads", folder);
+    await fs.mkdir(tmpDir, { recursive: true });
+    await fs.writeFile(path.join(tmpDir, fileName), Buffer.from(match[2], "base64"));
+    return `/uploads/${folder}/${fileName}`;
+  }
 }

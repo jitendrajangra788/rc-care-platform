@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Roshan Care — Advanced Home Nursing Platform
 
-## Getting Started
+Next.js app for **Roshan Care** (Bhilwara): marketing site + role-based care operations.
 
-First, run the development server:
+## Features
+
+- Marketing: Home, Services, How it works, Pricing, About, Careers, Contact, Book
+- Roles: **Super Admin**, **Admin**, **Care Coordinator**, **Nurse**, **Family**, **Patient**
+- Patient CRM, bookings, advanced Day/Week/Month schedule with conflict detection
+- Attendance (GPS geofence + site PIN), locations/allotment
+- Care plans, vitals timeline, daily care reports, medicine chart, care notes
+- Family portal + patient portal
+- Billing, manual payments ledger, expenses, payroll slips
+- Complaints, notifications, reports, users & roles, settings
+- Ops Hub (SOS, leaves, documents, audit)
+- JSON file datastore (`data/db.json`)
+
+## Quick start
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+Copy `.env.example` to `.env.local` and set `SESSION_SECRET` for production.
+
+## Demo logins (development)
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | super@roshancare.in | super123 |
+| Admin | admin@roshancare.in | admin123 |
+| Care Coordinator | coord@roshancare.in | coord123 |
+| Nurse | nurse@roshancare.in | 12345678 |
+| Family | family@roshancare.in | family123 |
+| Patient | patient@roshancare.in | patient123 |
+
+Demo buttons are hidden when `NODE_ENV=production` unless `NEXT_PUBLIC_DEMO_LOGINS=true`.
+
+## Scripts
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
+npm run lint
+npm test
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind 4
+- date-fns, Zod validation, Lucide, Framer Motion
+- Signed session cookies + scrypt password hashes
+- File-based JSON DB (persistent disk required for `next start`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy notes
 
-## Learn More
+- Prefer Node hosting with writable `data/` and `public/uploads/`
+- Set `SESSION_SECRET`, `DEMO_LOGINS`/`NEXT_PUBLIC_DEMO_LOGINS=false`
+- Backup `data/db.json` and uploads on each release
+- Passwords migrate from legacy plaintext to scrypt on successful login
 
-To learn more about Next.js, take a look at the following resources:
+## URL aliases
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `/dashboard/admin/calendar` → `/dashboard/admin/schedule`
+- `/dashboard/nurse/duties` → `/dashboard/nurse`
+- `/api/scheduling` → `/api/schedule`

@@ -45,10 +45,22 @@ export async function GET() {
     });
   }
   if (session.role === "nurse") {
-    const staff = db.staff.find((s) => s.userId === session.id || s.name === session.name);
+    const { attendanceForStaff, dutiesForStaff, staffForUser } = await import("@/lib/scope");
+    const staff = staffForUser(db, session);
+    const myDuties = dutiesForStaff(db, staff);
     return NextResponse.json({
-      attendance: db.attendance.filter((a) => a.nurseId === session.id),
-      salaryPayouts: (db.salaryPayouts || []).filter((p) => p.staffId === staff?.id),
+      attendance: attendanceForStaff(db, staff, session),
+      salaryPayouts: (db.salaryPayouts || []).filter((p) => staff && p.staffId === staff.id),
+      bookings: myDuties.map((b) => ({
+        id: b.id,
+        patientName: b.patientName,
+        lat: b.lat,
+        lng: b.lng,
+        geofenceRadiusM: b.geofenceRadiusM,
+        address: b.address,
+        assignedStaffId: b.assignedStaffId,
+        status: b.status,
+      })),
     });
   }
   return NextResponse.json({ attendance: [], salaryPayouts: [] });
@@ -164,10 +176,19 @@ export async function POST(req: Request) {
     if (session.role !== "nurse") {
       return NextResponse.json({ error: "Only staff can mark attendance" }, { status: 401 });
     }
-    staff = db.staff.find((s) => s.userId === session.id || s.name === session.name);
-    if (!staff) return NextResponse.json({ error: "Staff profile not found" }, { status: 404 });
-    if (booking.assignedStaffId !== staff.id) {
-      return NextResponse.json({ error: "This duty is not assigned to you" }, { status: 403 });
+    const { staffForUser } = await import("@/lib/scope");
+    staff = staffForUser(db, session);
+    if (!staff) {
+      return NextResponse.json(
+        { error: "Staff profile not linked. Ask admin to assign your login to a staff record." },
+        { status: 404 },
+      );
+    }
+    if (!booking.assignedStaffId || booking.assignedStaffId !== staff.id) {
+      return NextResponse.json(
+        { error: "Present only for your assigned duty. This booking is not assigned to you." },
+        { status: 403 },
+      );
     }
   }
 

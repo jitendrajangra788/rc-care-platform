@@ -1,5 +1,10 @@
 import { dutyProgress, todayDutyDate } from "@/lib/duty";
-import { staffForUser, patientIdsForUser } from "@/lib/scope";
+import {
+  attendanceForStaff,
+  dutiesForStaff,
+  patientIdsForUser,
+  staffForUser,
+} from "@/lib/scope";
 import type {
   Attendance,
   Booking,
@@ -37,9 +42,10 @@ export type NurseDeskContext = {
 export function buildNurseDesk(db: DbShape, user: SessionUser): NurseDeskContext {
   const staff = staffForUser(db, user);
   const today = todayDutyDate();
-  const duties = db.bookings
-    .filter((b) => b.assignedStaffId === staff?.id)
-    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  // Only bookings assigned to THIS staff — never unassigned / other nurses' duties
+  const duties = dutiesForStaff(db, staff).sort((a, b) =>
+    a.startDate.localeCompare(b.startDate),
+  );
 
   const activeDuties = duties.filter(
     (b) => b.status === "active" || b.status === "assigned",
@@ -50,7 +56,7 @@ export function buildNurseDesk(db: DbShape, user: SessionUser): NurseDeskContext
     .slice(0, 8);
   const completedDuties = duties.filter((b) => b.status === "completed");
 
-  const history = db.attendance.filter((a) => a.nurseId === user.id);
+  const history = attendanceForStaff(db, staff, user);
   const todayMarks = history.filter(
     (a) => (a.dutyDate || a.createdAt.slice(0, 10)) === today,
   );
@@ -163,11 +169,11 @@ export function nursePatients(db: DbShape, user: SessionUser): NursePatientRow[]
   const ids = patientIdsForUser(db, user);
   const staff = staffForUser(db, user);
   const today = todayDutyDate();
-  const history = db.attendance.filter((a) => a.nurseId === user.id);
+  const history = attendanceForStaff(db, staff, user);
   const patients = (db.patients || []).filter((p) => ids.has(p.id));
   const byPatient = new Map<string, Booking[]>();
-  for (const b of db.bookings) {
-    if (b.assignedStaffId !== staff?.id || !b.patientId) continue;
+  for (const b of dutiesForStaff(db, staff)) {
+    if (!b.patientId) continue;
     const list = byPatient.get(b.patientId) || [];
     list.push(b);
     byPatient.set(b.patientId, list);

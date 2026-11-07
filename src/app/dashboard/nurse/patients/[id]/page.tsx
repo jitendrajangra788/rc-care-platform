@@ -31,7 +31,7 @@ export default async function NursePatientDetailPage({
 
   const staff = staffForUser(db, user);
   const bookings = db.bookings
-    .filter((b) => b.assignedStaffId === staff?.id && b.patientId === id)
+    .filter((b) => staff && b.assignedStaffId === staff.id && b.patientId === id)
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
   const active = bookings.find((b) => b.status === "active" || b.status === "assigned");
   const bookingIds = new Set(bookings.map((b) => b.id));

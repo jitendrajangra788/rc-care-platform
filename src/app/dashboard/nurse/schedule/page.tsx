@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ClipboardList, MapPinned, CalendarDays, Plane } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { staffForUser } from "@/lib/scope";
+import { dutiesForStaff, staffForUser } from "@/lib/scope";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { NurseScheduleBoard } from "@/components/dashboard/NurseScheduleBoard";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -14,8 +14,8 @@ export default async function NurseSchedulePage() {
   if (!user) return null;
   const db = await readDb();
   const staff = staffForUser(db, user);
-  const duties = db.bookings.filter((b) => b.assignedStaffId === staff?.id);
-  const leaves = (db.leaves || []).filter((l) => l.staffId === staff?.id);
+  const duties = dutiesForStaff(db, staff);
+  const leaves = (db.leaves || []).filter((l) => staff && l.staffId === staff.id);
   const active = duties.filter((d) => d.status === "active" || d.status === "assigned");
   const onLeave = leaves.filter((l) => l.status === "approved" || l.status === "pending");
 

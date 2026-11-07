@@ -46,8 +46,10 @@ export async function GET(req: Request) {
   const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
   const role = normalizeRole(session.role);
   if (role === "nurse") {
-    const staff = db.staff.find((s) => s.userId === session.id || s.name === session.name);
-    bookings = bookings.filter((b) => b.assignedStaffId === staff?.id);
+    const { dutiesForStaff, staffForUser } = await import("@/lib/scope");
+    const staff = staffForUser(db, session);
+    const allowed = new Set(dutiesForStaff(db, staff).map((b) => b.id));
+    bookings = bookings.filter((b) => allowed.has(b.id));
   } else if (!isStaffOpsRole(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

@@ -437,9 +437,10 @@ export function AttendancePanel({
     return (
       <div className="soft-panel rounded-[var(--radius-xl)] p-8 text-center md:p-10">
         <ShieldAlert className="mx-auto h-12 w-12 text-primary/60" />
-        <h2 className="font-display mt-3 text-2xl text-heading md:text-3xl">No active duty</h2>
+        <h2 className="font-display mt-3 text-2xl text-heading md:text-3xl">No assigned duty</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted md:text-base">
-          Attendance unlocks after admin assigns you a booking.
+          Present / attendance only shows for bookings assigned to you. Ask care desk to assign a
+          duty.
         </p>
       </div>
     );

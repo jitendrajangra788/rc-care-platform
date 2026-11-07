@@ -1,4 +1,11 @@
-import type { Attendance, Booking, DbShape, SessionUser, Staff } from "@/lib/types";
+import type {
+  Attendance,
+  Booking,
+  DbShape,
+  MedicationLog,
+  SessionUser,
+  Staff,
+} from "@/lib/types";
 import { isStaffOpsRole, normalizeRole } from "@/lib/permissions";
 
 /** Resolve staff row for a nurse user — prefer userId, unique name only as fallback. */
@@ -55,6 +62,37 @@ export function bookingsForUser(db: DbShape, user: SessionUser): Booking[] {
     const mine = (db.patients || []).filter((p) => p.userId === user.id).map((p) => p.id);
     const set = new Set(mine);
     return db.bookings.filter((b) => (b.patientId && set.has(b.patientId)) || b.phone === user.phone);
+  }
+
+  return [];
+}
+
+/** Medicine chart (MAR): nurse sees only own entries; admin/ops see all. */
+export function medicationsForUser(db: DbShape, user: SessionUser): MedicationLog[] {
+  const role = normalizeRole(user.role);
+  if (isStaffOpsRole(role)) return db.medications || [];
+
+  if (role === "nurse") {
+    const staff = staffForUser(db, user);
+    return (db.medications || []).filter(
+      (m) => (staff && m.staffId === staff.id) || m.nurseId === user.id,
+    );
+  }
+
+  if (role === "family") {
+    const bookingIds = new Set(
+      db.bookings.filter((b) => b.familyUserId === user.id).map((b) => b.id),
+    );
+    const patientIds = patientIdsForUser(db, user);
+    for (const b of db.bookings) {
+      if (b.patientId && patientIds.has(b.patientId)) bookingIds.add(b.id);
+    }
+    return (db.medications || []).filter((m) => bookingIds.has(m.bookingId));
+  }
+
+  if (role === "patient") {
+    const bookingIds = new Set(bookingsForUser(db, user).map((b) => b.id));
+    return (db.medications || []).filter((m) => bookingIds.has(m.bookingId));
   }
 
   return [];

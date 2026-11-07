@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { pushActivity } from "@/lib/activity";
 import { readDb, saveDataUrlImage, writeDb } from "@/lib/db";
+import { isStaffOpsRole, normalizeRole } from "@/lib/permissions";
+import { medicationsForUser, staffForUser } from "@/lib/scope";
 import type { MedicationLog, MedicationType } from "@/lib/types";
 
 export async function GET() {
@@ -9,19 +11,9 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = await readDb();
-  if (session.role === "admin") {
-    return NextResponse.json({ medications: db.medications });
-  }
-  if (session.role === "nurse") {
-    return NextResponse.json({
-      medications: db.medications.filter((m) => m.nurseId === session.id),
-    });
-  }
-  const bookingIds = new Set(
-    db.bookings.filter((b) => b.familyUserId === session.id).map((b) => b.id),
-  );
   return NextResponse.json({
-    medications: db.medications.filter((m) => bookingIds.has(m.bookingId)),
+    medications: medicationsForUser(db, session),
+    scope: isStaffOpsRole(normalizeRole(session.role)) ? "all" : "own",
   });
 }
 
@@ -50,13 +42,21 @@ export async function POST(req: Request) {
   }
 
   const db = await readDb();
-  const staff = db.staff.find((s) => s.userId === session.id || s.name === session.name);
-  if (!staff) return NextResponse.json({ error: "Staff not found" }, { status: 404 });
+  const staff = staffForUser(db, session);
+  if (!staff) {
+    return NextResponse.json(
+      { error: "Staff profile not linked. Ask admin to link your login." },
+      { status: 404 },
+    );
+  }
 
   const booking = db.bookings.find((b) => b.id === body.bookingId);
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-  if (booking.assignedStaffId !== staff.id) {
-    return NextResponse.json({ error: "This patient is not assigned to you" }, { status: 403 });
+  if (!booking.assignedStaffId || booking.assignedStaffId !== staff.id) {
+    return NextResponse.json(
+      { error: "Medicine chart only for patients assigned to you." },
+      { status: 403 },
+    );
   }
 
   let photoUrl: string | undefined;
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
   pushActivity(db, {
     kind: "medication",
     title: `${log.medicineName} logged · ${log.patientName}`,
-    detail: `${log.type} · ${log.dose}`,
+    detail: `${log.type} · ${log.dose} · ${session.name}`,
     href: "/dashboard/admin/medications",
     actorId: session.id,
     actorName: session.name,
@@ -95,7 +95,11 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   const session = await getSession();
-  if (!session || (session.role !== "nurse" && session.role !== "admin")) {
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const role = normalizeRole(session.role);
+  const ops = isStaffOpsRole(role);
+  if (!ops && session.role !== "nurse") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -105,8 +109,17 @@ export async function DELETE(req: Request) {
   const db = await readDb();
   const item = db.medications.find((m) => m.id === id);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (session.role === "nurse" && item.nurseId !== session.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  if (!ops) {
+    const staff = staffForUser(db, session);
+    const own =
+      (staff && item.staffId === staff.id) || item.nurseId === session.id;
+    if (!own) {
+      return NextResponse.json(
+        { error: "You can only delete your own medicine chart entries." },
+        { status: 403 },
+      );
+    }
   }
 
   db.medications = db.medications.filter((m) => m.id !== id);

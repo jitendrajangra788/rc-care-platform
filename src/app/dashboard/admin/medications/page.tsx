@@ -1,3 +1,4 @@
+import { requireOps } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel, StatCard } from "@/components/dashboard/DashboardShell";
@@ -14,29 +15,28 @@ const typeTone: Record<string, BadgeTone> = {
 };
 
 export default async function AdminMedicationsPage() {
+  await requireOps();
   const db = await readDb();
-  const injections = db.medications.filter((m) => m.type === "injection" || m.type === "iv").length;
+  const meds = db.medications || [];
+  const injections = meds.filter((m) => m.type === "injection" || m.type === "iv").length;
+  const nurseIds = new Set(meds.map((m) => m.staffId || m.nurseId).filter(Boolean));
 
   return (
     <div className="dash-stack">
       <PageHeader
         eyebrow="Clinical · MAR"
         title="Medicine Chart"
-        subtitle="All medication administration records submitted by nursing staff across active and past duties."
+        subtitle="All nurses’ medication records. Each nurse portal shows only their own entries."
       />
 
       <div className="dash-grid-stats cols-3">
-        <StatCard label="Total entries" value={String(db.medications.length)} />
+        <StatCard label="Total entries" value={String(meds.length)} />
         <StatCard label="Inject / IV" value={String(injections)} tone="danger" />
-        <StatCard
-          label="Oral / other"
-          value={String(db.medications.length - injections)}
-          tone="success"
-        />
+        <StatCard label="Nurses logging" value={String(nurseIds.size)} tone="success" />
       </div>
 
-      <Panel title="All chart entries" subtitle="Dose, route, nurse and administration time.">
-        {db.medications.length === 0 ? (
+      <Panel title="All chart entries" subtitle="Every dose logged across the care desk.">
+        {meds.length === 0 ? (
           <EmptyState
             title="No medicine chart entries yet"
             description="Nurses log doses from their duty medicines screen."
@@ -54,8 +54,9 @@ export default async function AdminMedicationsPage() {
                 </tr>
               </thead>
               <tbody>
-                {db.medications.map((m) => {
+                {meds.map((m) => {
                   const staff = db.staff.find((s) => s.id === m.staffId);
+                  const nurseUser = db.users.find((u) => u.id === m.nurseId);
                   return (
                     <tr key={m.id}>
                       <td>
@@ -72,7 +73,12 @@ export default async function AdminMedicationsPage() {
                         {m.dose}
                         {m.route ? ` · ${m.route}` : ""}
                       </td>
-                      <td>{staff?.name || "—"}</td>
+                      <td>
+                        <p className="font-semibold text-heading">
+                          {staff?.name || nurseUser?.name || "—"}
+                        </p>
+                        <p className="text-xs text-muted">{m.staffId || m.nurseId}</p>
+                      </td>
                       <td className="text-muted">
                         {new Date(m.timeGiven).toLocaleString("en-IN")}
                         {m.notes ? (

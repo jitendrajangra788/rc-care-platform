@@ -2,6 +2,7 @@ import { Syringe, ClipboardList, Pill } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { buildNurseDesk } from "@/lib/nurse-desk";
+import { medicationsForUser } from "@/lib/scope";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { MedicationPanel } from "@/components/dashboard/MedicationPanel";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -13,14 +14,15 @@ export default async function NurseMedicationsPage() {
   if (!user) return null;
   const db = await readDb();
   const desk = buildNurseDesk(db, user);
-  const logs = db.medications.filter((m) => m.nurseId === user.id);
+  // Only this nurse's MAR entries — never other nurses' chart lines
+  const logs = medicationsForUser(db, user);
 
   return (
     <div className="dash-stack pb-20 md:pb-0">
       <PageHeader
         eyebrow="Nurse ops · Clinical"
         title="Medicine"
-        subtitle="Hospital-style MAR — log every drug with dose, route, time, and optional photo."
+        subtitle={`Your medicine chart only · ${user.name}. Admin can see every nurse’s entries.`}
       />
       <div className="dash-grid-stats cols-3">
         <StatCard
@@ -36,7 +38,7 @@ export default async function NurseMedicationsPage() {
           icon={<Pill className="h-4 w-4" />}
         />
         <StatCard
-          label="Logged entries"
+          label="My logged entries"
           value={String(logs.length)}
           icon={<Syringe className="h-4 w-4" />}
         />

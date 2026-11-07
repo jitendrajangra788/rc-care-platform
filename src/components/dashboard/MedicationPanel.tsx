@@ -154,7 +154,8 @@ export function MedicationPanel({
 
           {duties.length === 0 ? (
             <div className="rounded-[var(--radius-lg)] bg-paper-2 px-4 py-3 text-center text-sm text-muted">
-              No active patient assigned. Chart unlocks after duty assignment.
+              No active patient assigned to you. You can still review your past entries on the
+              right — new logs unlock after care desk assigns a duty.
             </div>
           ) : (
             <>
@@ -280,7 +281,7 @@ export function MedicationPanel({
         <section className="soft-panel overflow-hidden rounded-[1.75rem]">
           <div className="border-b border-[var(--line)] px-3 py-2 md:px-3">
             <h3 className="font-display text-2xl">Administered drugs</h3>
-            <p className="mt-1 text-sm text-ink-soft">Latest entries on this nurse chart</p>
+            <p className="mt-1 text-sm text-ink-soft">Only your logged entries (admin sees all nurses)</p>
           </div>
 
           {logs.length === 0 ? (

@@ -23,14 +23,18 @@ export function recordMatches(query: string, ...parts: Array<string | number | u
   const hayDigits = digitsOnly(hay);
   const qDigits = digitsOnly(q);
 
-  if (qDigits.length >= 3 && hayDigits.includes(qDigits)) return true;
+  if (qDigits.length >= 2 && hayDigits.includes(qDigits)) return true;
 
   const tokens = q.split(" ").filter(Boolean);
   if (tokens.length === 0) return true;
   return tokens.every((token) => {
     if (hay.includes(token)) return true;
+    // Single akshar / letter: match word starts or contains
+    if (token.length === 1) {
+      return hay.split(/[^a-z0-9]+/).some((w) => w.startsWith(token) || w.includes(token));
+    }
     const td = digitsOnly(token);
-    return td.length >= 3 && hayDigits.includes(td);
+    return td.length >= 2 && hayDigits.includes(td);
   });
 }
 
@@ -42,13 +46,17 @@ export function scoreHit(query: string, hit: SearchHit): number {
   const keywords = normSearch(hit.keywords);
   const qDigits = digitsOnly(q);
   const keyDigits = digitsOnly(hit.keywords);
+  const words = title.split(/[^a-z0-9]+/).filter(Boolean);
 
   if (id === q || title === q) return 100;
-  if (id.startsWith(q) || title.startsWith(q)) return 90;
-  if (qDigits.length >= 3 && keyDigits.startsWith(qDigits)) return 85;
-  if (title.includes(q) || id.includes(q)) return 70;
-  if (qDigits.length >= 3 && keyDigits.includes(qDigits)) return 65;
-  if (keywords.includes(q)) return 50;
+  if (id.startsWith(q) || title.startsWith(q)) return 95;
+  // Hospital EHR style: one letter still matches name tokens (S → Suresh)
+  if (words.some((w) => w.startsWith(q))) return 92;
+  if (qDigits.length >= 1 && keyDigits.startsWith(qDigits) && qDigits.length >= 2) return 88;
+  if (title.includes(q) || id.includes(q)) return 75;
+  if (qDigits.length >= 2 && keyDigits.includes(qDigits)) return 70;
+  if (keywords.includes(q)) return 55;
+  if (words.some((w) => w.includes(q))) return 50;
   if (recordMatches(q, hit.keywords, hit.title, hit.subtitle, hit.id)) return 40;
   return 0;
 }

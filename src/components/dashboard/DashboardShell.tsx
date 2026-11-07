@@ -26,7 +26,6 @@ import {
   PlusCircle,
   Radio,
   Receipt,
-  Search,
   Settings,
   Stethoscope,
   Syringe,
@@ -434,20 +433,8 @@ function DashboardShellInner({
                   <Menu className="h-5 w-5" />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCmdQuery(headerQuery);
-                    setCmdOpen(true);
-                  }}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper-2 text-heading md:hidden"
-                  aria-label={t.searchPages}
-                >
-                  <Search className="h-4 w-4" />
-                </button>
-
                 <RecordSearchBar
-                  className="hidden max-w-xl md:flex"
+                  className="max-w-xl"
                   value={headerQuery}
                   onChange={setHeaderQuery}
                   placeholder="Staff, patient, booking no…"

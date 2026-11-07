@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import type { NavItem } from "@/lib/nav";
 import type { SearchHit } from "@/lib/search";
-import { cn } from "@/lib/utils";
 
 const typeMeta: Record<
   SearchHit["type"],
@@ -27,11 +26,11 @@ const typeMeta: Record<
 };
 
 export function CommandPalette({
-  links,
   open,
   onOpenChange,
 }: {
-  links: NavItem[];
+  /** Kept for call-site compatibility; pages are no longer searched. */
+  links?: NavItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -95,16 +94,6 @@ export function CommandPalette({
     };
   }, [query, open]);
 
-  const pageMatches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return links.slice(0, 8);
-    return links.filter(
-      (link) =>
-        link.label.toLowerCase().includes(q) ||
-        link.href.toLowerCase().includes(q),
-    );
-  }, [links, query]);
-
   const groupedHits = useMemo(() => {
     const order: SearchHit["type"][] = [
       "booking",
@@ -145,9 +134,9 @@ export function CommandPalette({
             <Command.Input
               value={query}
               onValueChange={setQuery}
-              placeholder="Search staff, patients, bookings, pages…"
+              placeholder="Search staff, patients, bookings…"
               className="h-12 w-full bg-transparent text-sm text-heading outline-none placeholder:text-muted"
-              aria-label="Global search"
+              aria-label="Record search"
               autoFocus
             />
             <kbd className="hidden rounded border border-[var(--line)] bg-[var(--surface-muted)] px-1.5 py-0.5 text-[10px] font-semibold text-muted sm:inline">
@@ -159,8 +148,8 @@ export function CommandPalette({
               {loading
                 ? "Searching…"
                 : query.trim()
-                  ? "No matching staff, patients, bookings, or pages"
-                  : "Type a name, phone, or booking no."}
+                  ? "No matching staff, patients, or bookings"
+                  : "Type a staff name, patient name, phone, or booking no."}
             </Command.Empty>
 
             {groupedHits.map((group) => {
@@ -195,28 +184,6 @@ export function CommandPalette({
               );
             })}
 
-            {pageMatches.length > 0 ? (
-              <Command.Group
-                heading="Pages"
-                className="px-1 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted"
-              >
-                {pageMatches.map((link) => (
-                  <Command.Item
-                    key={link.href}
-                    value={`page ${link.label} ${link.href}`}
-                    onSelect={() => go(link.href)}
-                    className={cn(
-                      "flex cursor-pointer items-center justify-between rounded-[var(--radius-md)] px-3 py-2.5 text-sm text-heading aria-selected:bg-[var(--primary-soft)] aria-selected:text-primary",
-                    )}
-                  >
-                    <span className="font-medium">{link.label}</span>
-                    <span className="text-xs text-muted">
-                      {link.href.replace("/dashboard", "") || "/"}
-                    </span>
-                  </Command.Item>
-                ))}
-              </Command.Group>
-            ) : null}
           </Command.List>
         </Command>
       </div>

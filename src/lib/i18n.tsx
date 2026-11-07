@@ -12,7 +12,7 @@ export type Locale = "en" | "hi";
 
 const strings = {
   en: {
-    searchPages: "Search staff, patients, bookings…",
+    searchPages: "Search records…",
     commandHint: "Ctrl+K",
     notifications: "Notifications",
     website: "Website",
@@ -28,7 +28,7 @@ const strings = {
     signOut: "Sign out",
   },
   hi: {
-    searchPages: "स्टाफ़, मरीज़, बुकिंग खोजें…",
+    searchPages: "रिकॉर्ड खोजें…",
     commandHint: "Ctrl+K",
     notifications: "सूचनाएँ",
     website: "वेबसाइट",

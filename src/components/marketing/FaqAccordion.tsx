@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import type { FaqItem } from "@/lib/marketing-content";
+import { pick, type FaqItem } from "@/lib/marketing-content";
+import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function FaqAccordion({
@@ -13,13 +14,16 @@ export function FaqAccordion({
   defaultOpen?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const { locale } = useLocale();
 
   return (
     <div className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
       {items.map((f, i) => {
         const isOpen = open === i;
+        const question = pick(f.q, locale);
+        const answer = pick(f.a, locale);
         return (
-          <div key={f.q}>
+          <div key={`${f.category}-${i}`}>
             <button
               type="button"
               className="flex w-full items-center justify-between gap-4 py-5 text-left transition hover:text-primary"
@@ -27,7 +31,7 @@ export function FaqAccordion({
               aria-expanded={isOpen}
             >
               <span className="font-display text-[15px] font-semibold tracking-tight text-heading md:text-base">
-                {f.q}
+                {question}
               </span>
               <ChevronDown
                 className={cn(
@@ -43,7 +47,7 @@ export function FaqAccordion({
               )}
             >
               <div className="overflow-hidden">
-                <p className="pb-5 text-sm leading-relaxed text-muted md:text-[15px]">{f.a}</p>
+                <p className="pb-5 text-sm leading-relaxed text-muted md:text-[15px]">{answer}</p>
               </div>
             </div>
           </div>

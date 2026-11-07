@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, Phone, X } from "lucide-react";
+import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -17,6 +18,7 @@ const links = [
 
 export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "overlay" }) {
   const [open, setOpen] = useState(false);
+  const { locale, setLocale } = useLocale();
   const overlay = tone === "overlay" || tone === "dark";
 
   return (
@@ -66,6 +68,47 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <div
+            className={cn(
+              "inline-flex rounded-full border p-0.5 text-[11px] font-bold uppercase tracking-wide",
+              overlay ? "border-white/20" : "border-[var(--line)]",
+            )}
+            role="group"
+            aria-label="Language"
+          >
+            <button
+              type="button"
+              onClick={() => setLocale("en")}
+              className={cn(
+                "rounded-full px-2.5 py-1.5 transition",
+                locale === "en"
+                  ? overlay
+                    ? "bg-white text-[#066670]"
+                    : "bg-primary text-[var(--sidebar-fg)]"
+                  : overlay
+                    ? "text-white/70 hover:text-white"
+                    : "text-muted hover:text-heading",
+              )}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocale("hi")}
+              className={cn(
+                "rounded-full px-2.5 py-1.5 transition",
+                locale === "hi"
+                  ? overlay
+                    ? "bg-white text-[#066670]"
+                    : "bg-primary text-[var(--sidebar-fg)]"
+                  : overlay
+                    ? "text-white/70 hover:text-white"
+                    : "text-muted hover:text-heading",
+              )}
+            >
+              HI
+            </button>
+          </div>
           <a
             href="tel:+917073231360"
             className={cn(
@@ -93,6 +136,17 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setLocale(locale === "en" ? "hi" : "en")}
+            className={cn(
+              "rounded-full px-2.5 py-2 text-[11px] font-bold uppercase",
+              overlay ? "bg-white/12 text-white" : "bg-paper-2 text-heading",
+            )}
+            aria-label="Switch language"
+          >
+            {locale === "en" ? "HI" : "EN"}
+          </button>
           <Link href="/book" className="btn btn-primary btn-sm">
             Book
           </Link>

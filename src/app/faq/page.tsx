@@ -20,7 +20,7 @@ export default function FaqPage() {
     <>
       <PageHero
         title="Frequently asked questions"
-        subtitle="Booking, packages, family portal, aur staff replacement — clear answers before you call the desk."
+        subtitle="Booking, packages, family portal, and staff replacement — clear answers before you call the desk. Switch EN / HI anytime."
         image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=2000&q=80"
       />
 
@@ -60,8 +60,8 @@ export default function FaqPage() {
               Still unsure?
             </h2>
             <p className="mt-2 max-w-lg text-sm text-muted">
-              Care desk Bhilwara se directly guide karegi — shift, rate, aur staff match clear
-              batayenge.
+              The Bhilwara care desk will guide you directly — shift length, rates, and staff
+              match, explained clearly before you book.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

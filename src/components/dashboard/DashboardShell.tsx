@@ -473,8 +473,9 @@ function DashboardShellInner({
               <div className="min-w-0 flex-1 overflow-hidden">
                 <Breadcrumbs />
               </div>
-              <p className="truncate text-xs text-muted md:hidden">
-                {t.welcome}, <span className="font-semibold text-heading">{user.name}</span>
+              <p className="hidden max-w-[10rem] truncate text-xs text-muted min-[420px]:block md:hidden">
+                {t.welcome},{" "}
+                <span className="font-semibold text-heading">{user.name.split(" ")[0]}</span>
               </p>
             </div>
           </div>

@@ -15,7 +15,8 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
-import { blogPosts, faqItems } from "@/lib/marketing-content";
+import { blogPosts, faqItems, pick } from "@/lib/marketing-content";
+import { useLocale } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 import { cn, formatINR } from "@/lib/utils";
 
@@ -111,20 +112,26 @@ const packages = [
 
 const testimonials = [
   {
-    quote:
-      "Maa ke liye 12hr nurse lagi. Har shift pe update milta hai — pehle kabhi itna clear nahi tha.",
+    quote: {
+      en: "We booked a 12-hour nurse for my mother. Every shift comes with a clear update — we never had this much visibility before.",
+      hi: "Maa ke liye 12hr nurse lagi. Har shift pe update milta hai — pehle kabhi itna clear nahi tha.",
+    },
     name: "Amit Jain",
     area: "Subhash Nagar",
   },
   {
-    quote:
-      "Post-surgery wound care ghar pe mil gaya. Staff on time aayi, medicine chart bhi portal pe dikhta hai.",
+    quote: {
+      en: "Post-surgery wound care came home. Staff arrived on time, and the medicine chart shows up in the portal too.",
+      hi: "Post-surgery wound care ghar pe mil gaya. Staff on time aayi, medicine chart bhi portal pe dikhta hai.",
+    },
     name: "Kavita Sharma",
     area: "Bapu Nagar",
   },
   {
-    quote:
-      "Care desk ne backup nurse same din bhej di. Emergency me bhi process calm laga.",
+    quote: {
+      en: "The care desk sent a backup nurse the same day. Even in an emergency the process felt calm.",
+      hi: "Care desk ne backup nurse same din bhej di. Emergency me bhi process calm laga.",
+    },
     name: "Rohit Mehta",
     area: "Shastri Nagar",
   },
@@ -142,6 +149,7 @@ function hourDeskLabel() {
 }
 
 export function HomeExperience() {
+  const { locale } = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [hourLabel] = useState(hourDeskLabel);
   const [openFaq, setOpenFaq] = useState(0);
@@ -416,7 +424,9 @@ export function HomeExperience() {
                 key={t.name}
                 className="rounded-[var(--radius-lg)] border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
               >
-                <p className="mt-4 text-[15px] leading-relaxed text-white/80">&ldquo;{t.quote}&rdquo;</p>
+                <p className="mt-4 text-[15px] leading-relaxed text-white/80">
+                  &ldquo;{pick(t.quote, locale)}&rdquo;
+                </p>
                 <footer className="mt-5">
                   <p className="font-name text-white">{t.name}</p>
                   <p className="text-xs text-white/45">{t.area}</p>
@@ -438,7 +448,7 @@ export function HomeExperience() {
                 Care guides for families
               </h2>
               <p className="mt-3 max-w-xl text-body">
-                Recovery checklists, elderly safety, GPS trust, aur medicine charts — practical
+                Recovery checklists, elderly safety, GPS trust, and medicine charts — practical
                 notes from the Bhilwara desk.
               </p>
             </div>
@@ -466,8 +476,12 @@ export function HomeExperience() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
                     {post.category}
                   </p>
-                  <h3 className="font-display mt-2 text-lg text-heading">{post.title}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted">{post.excerpt}</p>
+                  <h3 className="font-display mt-2 text-lg text-heading">
+                    {pick(post.title, locale)}
+                  </h3>
+                  <p className="mt-2 line-clamp-2 text-sm text-muted">
+                    {pick(post.excerpt, locale)}
+                  </p>
                   <p className="mt-3 text-[11px] font-semibold text-muted">
                     {formatDate(post.publishedAt)} · {post.readMins} min
                   </p>
@@ -496,14 +510,16 @@ export function HomeExperience() {
             {faqs.map((f, i) => {
               const open = openFaq === i;
               return (
-                <div key={f.q}>
+                <div key={`${f.category}-${i}`}>
                   <button
                     type="button"
                     className="flex w-full items-center justify-between gap-4 py-3 text-left"
                     onClick={() => setOpenFaq(open ? -1 : i)}
                     aria-expanded={open}
                   >
-                    <span className="font-name text-[15px] text-heading md:text-base">{f.q}</span>
+                    <span className="font-name text-[15px] text-heading md:text-base">
+                      {pick(f.q, locale)}
+                    </span>
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 shrink-0 text-muted transition",
@@ -512,7 +528,9 @@ export function HomeExperience() {
                     />
                   </button>
                   {open ? (
-                    <p className="pb-3 text-sm leading-relaxed text-muted">{f.a}</p>
+                    <p className="pb-3 text-sm leading-relaxed text-muted">
+                      {pick(f.a, locale)}
+                    </p>
                   ) : null}
                 </div>
               );

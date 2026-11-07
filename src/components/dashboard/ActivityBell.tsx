@@ -88,9 +88,9 @@ export function ActivityBell() {
               setOpen(false);
             }}
           />
-          <div className="absolute right-0 z-50 mt-2 w-[min(92vw,360px)] overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-surface shadow-[var(--shadow-lg)]">
+          <div className="fixed inset-x-3 top-[4.5rem] z-50 max-h-[min(70vh,28rem)] overflow-hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-surface shadow-[var(--shadow-lg)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[min(92vw,360px)]">
             <div className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3">
-              <p className="text-sm font-semibold text-heading">Live activity</p>
+              <p className="text-sm font-semibold text-heading">Activity</p>
               <button
                 type="button"
                 onClick={() => void markAllRead()}
@@ -99,7 +99,7 @@ export function ActivityBell() {
                 Mark read
               </button>
             </div>
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-[min(60vh,22rem)] overflow-y-auto overscroll-contain">
               {items.length === 0 ? (
                 <p className="px-4 py-10 text-center text-sm text-muted">No activity yet</p>
               ) : (
@@ -116,9 +116,11 @@ export function ActivityBell() {
                       "block border-b border-[var(--line)] px-4 py-3 transition hover:bg-paper-2",
                     )}
                   >
-                    <p className="text-sm font-semibold text-heading">{a.title}</p>
+                    <p className="break-words text-sm font-semibold text-heading">{a.title}</p>
                     {a.detail ? (
-                      <p className="mt-0.5 line-clamp-2 text-xs text-muted">{a.detail}</p>
+                      <p className="mt-0.5 line-clamp-2 break-words text-xs text-muted">
+                        {a.detail}
+                      </p>
                     ) : null}
                     <p className="mt-1 text-[11px] text-muted">
                       {formatDateTime(a.createdAt)}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { WhatsAppFab } from "@/components/marketing/WhatsAppFab";
 import { ToastHost } from "@/components/ui/toast";
+import { LocaleProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const inter = Inter({
@@ -36,9 +37,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${inter.variable} ${noto.variable} h-full antialiased`}>
       <body className="site-bg flex min-h-full flex-col font-sans">
-        {children}
-        <ToastHost />
-        <WhatsAppFab />
+        <LocaleProvider>
+          {children}
+          <ToastHost />
+          <WhatsAppFab />
+        </LocaleProvider>
       </body>
     </html>
   );

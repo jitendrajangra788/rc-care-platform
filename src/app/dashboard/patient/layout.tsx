@@ -1,6 +1,7 @@
-import { requireRole } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default async function PatientLayout({ children }: { children: React.ReactNode }) {
-  await requireRole("patient");
-  return children;
+/** Patient portal merged into family — one home-care desk. */
+export default function PatientLayout({ children }: { children: React.ReactNode }) {
+  void children;
+  redirect("/dashboard/family");
 }

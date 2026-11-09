@@ -88,6 +88,12 @@ export const settingsSchema = z.object({
   supportPhone: z.string().max(30).optional(),
   supportEmail: z.string().email().optional().or(z.literal("")),
   city: z.string().max(80).optional(),
+  address: z.string().max(300).optional(),
+  adminName: z.string().max(120).optional(),
+  logoUrl: z.union([z.string().max(2_500_000), z.literal("")]).optional(),
+  gstin: z.string().max(30).optional(),
+  invoiceTagline: z.string().max(160).optional(),
+  upiId: z.string().max(80).optional(),
   demoLogins: z.boolean().optional(),
   defaultGeofenceM: z.number().int().min(50).max(2000).optional(),
 });

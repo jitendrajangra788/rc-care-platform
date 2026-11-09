@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Printer } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { formatINR } from "@/lib/utils";
@@ -80,7 +81,7 @@ export default async function FamilyBillingPage() {
                         />
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-1.5">
                       <Badge
                         tone={
                           inv.status === "paid"
@@ -93,6 +94,12 @@ export default async function FamilyBillingPage() {
                         {inv.status}
                       </Badge>
                       {overdueRow ? <Badge tone="danger">Overdue</Badge> : null}
+                      <Link
+                        href={`/print/invoice/${encodeURIComponent(inv.id)}?auto=1&back=${encodeURIComponent("/dashboard/family/billing")}`}
+                        className="btn btn-outline btn-sm"
+                      >
+                        <Printer className="h-3.5 w-3.5" /> Print
+                      </Link>
                     </div>
                   </ListTileHeader>
                 </ListTile>

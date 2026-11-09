@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Plus, Wallet } from "lucide-react";
+import { FileText, Plus, Printer, Wallet } from "lucide-react";
 import type { Booking, Invoice, Patient } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -366,68 +366,76 @@ export function BillingManager({
                       {formatDate(inv.dueDate)}
                     </td>
                     <td>
-                      {inv.status === "paid" ? (
-                        <span className="text-xs font-semibold text-success">Settled</span>
-                      ) : collectId === inv.id ? (
-                        <div className="flex min-w-[14rem] flex-col gap-2">
-                          <Input
-                            type="number"
-                            min={1}
-                            max={balance}
-                            value={collectAmount}
-                            onChange={(e) => setCollectAmount(e.target.value)}
-                            placeholder="Amount"
-                          />
-                          <Select
-                            value={collectMethod}
-                            onChange={(e) => setCollectMethod(e.target.value)}
-                          >
-                            <option value="upi">UPI</option>
-                            <option value="cash">Cash</option>
-                            <option value="bank">Bank</option>
-                            <option value="other">Other</option>
-                          </Select>
+                      <div className="flex flex-col gap-1.5">
+                        <Link
+                          href={`/print/invoice/${encodeURIComponent(inv.id)}?auto=1&back=${encodeURIComponent("/dashboard/admin/billing")}`}
+                          className="btn btn-outline btn-sm inline-flex w-fit"
+                        >
+                          <Printer className="h-3.5 w-3.5" /> Print
+                        </Link>
+                        {inv.status === "paid" ? (
+                          <span className="text-xs font-semibold text-success">Settled</span>
+                        ) : collectId === inv.id ? (
+                          <div className="flex min-w-[14rem] flex-col gap-2">
+                            <Input
+                              type="number"
+                              min={1}
+                              max={balance}
+                              value={collectAmount}
+                              onChange={(e) => setCollectAmount(e.target.value)}
+                              placeholder="Amount"
+                            />
+                            <Select
+                              value={collectMethod}
+                              onChange={(e) => setCollectMethod(e.target.value)}
+                            >
+                              <option value="upi">UPI</option>
+                              <option value="cash">Cash</option>
+                              <option value="bank">Bank</option>
+                              <option value="other">Other</option>
+                            </Select>
+                            <div className="flex flex-wrap gap-1.5">
+                              <Button
+                                size="sm"
+                                disabled={busy === inv.id}
+                                onClick={() =>
+                                  update(inv.id, {
+                                    collectAmount: Number(collectAmount),
+                                    method: collectMethod,
+                                  })
+                                }
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => setCollectId(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
                           <div className="flex flex-wrap gap-1.5">
                             <Button
                               size="sm"
+                              variant="secondary"
                               disabled={busy === inv.id}
-                              onClick={() =>
-                                update(inv.id, {
-                                  collectAmount: Number(collectAmount),
-                                  method: collectMethod,
-                                })
-                              }
+                              onClick={() => openCollect(inv)}
                             >
-                              Save
+                              Collect
                             </Button>
                             <Button
                               size="sm"
-                              variant="secondary"
-                              onClick={() => setCollectId(null)}
+                              disabled={busy === inv.id}
+                              onClick={() => update(inv.id, { markPaid: true, method: "upi" })}
                             >
-                              Cancel
+                              Mark paid
                             </Button>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            disabled={busy === inv.id}
-                            onClick={() => openCollect(inv)}
-                          >
-                            Collect
-                          </Button>
-                          <Button
-                            size="sm"
-                            disabled={busy === inv.id}
-                            onClick={() => update(inv.id, { markPaid: true, method: "upi" })}
-                          >
-                            Mark paid
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

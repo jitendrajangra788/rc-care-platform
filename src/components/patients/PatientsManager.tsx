@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, Pencil, Phone, Plus, UserRound } from "lucide-react";
-import type { Patient, SessionUser } from "@/lib/types";
+import type { Patient } from "@/lib/types";
 import { formatDate, formatPhone, telHref, titleCase } from "@/lib/format";
 import { toast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/Avatar";
@@ -42,14 +42,12 @@ function patientToForm(p: Patient): PatientFormValues {
 
 export function PatientsManager({
   patients,
-  familyUsers,
   bookingCounts = {},
   loading = false,
   error = "",
   onRetry,
 }: {
   patients: Patient[];
-  familyUsers: SessionUser[];
   bookingCounts?: Record<string, number>;
   loading?: boolean;
   error?: string;
@@ -129,7 +127,7 @@ export function PatientsManager({
       address: form.address.trim(),
       area: form.area.trim(),
       notes: form.notes.trim(),
-      familyUserIds: form.familyUserId ? [form.familyUserId] : [],
+      familyUserIds: [],
     };
     const res = await fetch("/api/patients", {
       method: editing ? "PATCH" : "POST",
@@ -489,7 +487,7 @@ export function PatientsManager({
               setErrors({});
             }}
             errors={errors}
-            familyUsers={familyUsers}
+            showFamilyLink={false}
           />
           <div className="flex flex-wrap gap-2 border-t border-[var(--line)] pt-2">
             <Button type="submit" loading={saving} disabled={saving}>

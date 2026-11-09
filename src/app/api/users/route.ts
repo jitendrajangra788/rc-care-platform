@@ -43,7 +43,8 @@ export async function POST(req: Request) {
     name: parsed.data.name.trim(),
     email: parsed.data.email.trim().toLowerCase(),
     password: hashPassword(parsed.data.password),
-    role: parsed.data.role as Role,
+    // patient is an alias of family (one home-care portal)
+    role: normalizeRole(parsed.data.role) as Role,
     phone: parsed.data.phone?.trim(),
     active: true,
   };
@@ -70,18 +71,32 @@ export async function PATCH(req: Request) {
   const idx = db.users.findIndex((u) => u.id === body.id);
   if (idx < 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const cur = db.users[idx];
+  const nextEmail =
+    typeof body.email === "string" && body.email.trim()
+      ? body.email.trim().toLowerCase()
+      : cur.email;
+  if (
+    nextEmail !== cur.email &&
+    db.users.some((u) => u.id !== cur.id && u.email.toLowerCase() === nextEmail)
+  ) {
+    return NextResponse.json({ error: "Email already exists" }, { status: 409 });
+  }
+  if (body.password && String(body.password).length > 0 && String(body.password).length < 6) {
+    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+  }
   db.users[idx] = {
     ...cur,
     name: body.name?.trim() || cur.name,
+    email: nextEmail,
     role: body.role ? normalizeRole(body.role) : cur.role,
-    phone: body.phone !== undefined ? body.phone : cur.phone,
+    phone: body.phone !== undefined ? String(body.phone).trim() : cur.phone,
     active: typeof body.active === "boolean" ? body.active : cur.active,
     password: body.password ? hashPassword(String(body.password)) : cur.password,
   };
   pushAudit(db, {
     action: "user.update",
     entity: "user",
-    detail: `${cur.email} · role=${db.users[idx].role} active=${db.users[idx].active !== false}`,
+    detail: `${db.users[idx].email} · role=${db.users[idx].role} active=${db.users[idx].active !== false}${body.password ? " · password reset" : ""}`,
     actorId: auth.user.id,
     actorName: auth.user.name,
   });

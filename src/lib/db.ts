@@ -57,6 +57,10 @@ function ensureArrays(db: DbShape): DbShape {
     salaryPerShift: typeof s.salaryPerShift === "number" ? s.salaryPerShift : 700,
     performanceScore: s.performanceScore ?? 80,
   }));
+  // Family + patient are one portal
+  db.users = (db.users || []).map((u) =>
+    u.role === "patient" ? { ...u, role: "family" as const } : u,
+  );
   return db;
 }
 
@@ -426,7 +430,7 @@ export async function resetDb() {
 
 export async function saveDataUrlImage(
   dataUrl: string,
-  folder: "profiles" | "attendance" | "medications" | "documents" | "reports",
+  folder: "profiles" | "attendance" | "medications" | "documents" | "reports" | "branding",
   prefix: string,
 ) {
   const match = /^data:(image\/[a-zA-Z0-9.+-]+|application\/pdf);base64,(.+)$/.exec(dataUrl);

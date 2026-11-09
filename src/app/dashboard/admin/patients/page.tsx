@@ -6,13 +6,6 @@ import { PatientsManager } from "@/components/patients/PatientsManager";
 export default async function AdminPatientsPage() {
   await requireOps();
   const db = await readDb();
-  const familyUsers = db.users
-    .filter((u) => u.role === "family")
-    .map(({ password: _, ...safe }) => {
-      void _;
-      return safe;
-    });
-
   const bookingCounts: Record<string, number> = {};
   for (const b of db.bookings) {
     if (b.patientId) {
@@ -36,7 +29,6 @@ export default async function AdminPatientsPage() {
       />
       <PatientsManager
         patients={db.patients || []}
-        familyUsers={familyUsers}
         bookingCounts={bookingCounts}
       />
     </div>

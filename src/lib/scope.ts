@@ -48,20 +48,13 @@ export function bookingsForUser(db: DbShape, user: SessionUser): Booking[] {
   }
 
   if (role === "family") {
-    const patientIds = new Set(
-      (db.patients || [])
-        .filter((p) => (p.familyUserIds || []).includes(user.id))
-        .map((p) => p.id),
-    );
+    const patientIds = patientIdsForUser(db, user);
     return db.bookings.filter(
-      (b) => b.familyUserId === user.id || (b.patientId && patientIds.has(b.patientId)),
+      (b) =>
+        b.familyUserId === user.id ||
+        (b.patientId && patientIds.has(b.patientId)) ||
+        (!!user.phone && b.phone === user.phone),
     );
-  }
-
-  if (role === "patient") {
-    const mine = (db.patients || []).filter((p) => p.userId === user.id).map((p) => p.id);
-    const set = new Set(mine);
-    return db.bookings.filter((b) => (b.patientId && set.has(b.patientId)) || b.phone === user.phone);
   }
 
   return [];
@@ -80,17 +73,6 @@ export function medicationsForUser(db: DbShape, user: SessionUser): MedicationLo
   }
 
   if (role === "family") {
-    const bookingIds = new Set(
-      db.bookings.filter((b) => b.familyUserId === user.id).map((b) => b.id),
-    );
-    const patientIds = patientIdsForUser(db, user);
-    for (const b of db.bookings) {
-      if (b.patientId && patientIds.has(b.patientId)) bookingIds.add(b.id);
-    }
-    return (db.medications || []).filter((m) => bookingIds.has(m.bookingId));
-  }
-
-  if (role === "patient") {
     const bookingIds = new Set(bookingsForUser(db, user).map((b) => b.id));
     return (db.medications || []).filter((m) => bookingIds.has(m.bookingId));
   }
@@ -114,13 +96,14 @@ export function patientIdsForUser(db: DbShape, user: SessionUser): Set<string> {
   if (role === "family") {
     return new Set(
       (db.patients || [])
-        .filter((p) => (p.familyUserIds || []).includes(user.id))
+        .filter(
+          (p) =>
+            p.userId === user.id ||
+            (p.familyUserIds || []).includes(user.id) ||
+            (!!user.phone && p.phone === user.phone),
+        )
         .map((p) => p.id),
     );
-  }
-
-  if (role === "patient") {
-    return new Set((db.patients || []).filter((p) => p.userId === user.id).map((p) => p.id));
   }
 
   return new Set();

@@ -1,70 +1,116 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Menu, Phone, X } from "lucide-react";
 import { useLocale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/services", label: "Services" },
-  { href: "/pricing", label: "Pricing" },
   { href: "/how-it-works", label: "How it works" },
-  { href: "/blog", label: "Blog" },
   { href: "/faq", label: "FAQ" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
 
-export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "overlay" }) {
+export function SiteHeader({
+  tone = "light",
+  logoUrl: logoProp,
+  orgName = "Roshan Care",
+}: {
+  tone?: "light" | "dark" | "overlay";
+  logoUrl?: string;
+  orgName?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(logoProp || "");
   const { locale, setLocale } = useLocale();
+  const pathname = usePathname();
   const overlay = tone === "overlay" || tone === "dark";
+
+  useEffect(() => {
+    if (logoProp) {
+      setLogoUrl(logoProp);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/public/brand")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.logoUrl) setLogoUrl(String(data.logoUrl));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [logoProp]);
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 transition-colors duration-300",
+        "relative z-50 transition-colors duration-300",
         overlay
-          ? "bg-gradient-to-b from-[#07131f]/70 via-[#07131f]/25 to-transparent"
-          : "border-b border-[var(--line)] bg-surface/85 backdrop-blur-xl",
+          ? "bg-transparent"
+          : "sticky top-0 border-b border-[var(--line)] bg-white/92 backdrop-blur-xl",
       )}
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-5 sm:py-3.5 md:px-8 md:py-4">
-        <Link href="/" className="min-w-0 flex-1">
-          <span
-            className={cn(
-              "font-display block truncate text-[1.45rem] leading-none tracking-[-0.03em] sm:text-[1.7rem] md:text-[1.85rem]",
-              overlay ? "text-white" : "text-heading",
-            )}
-          >
-            Roshan Care
-          </span>
-          <span
-            className={cn(
-              "mt-1 block truncate text-[9px] font-semibold uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.2em]",
-              overlay ? "text-white/65" : "text-primary",
-            )}
-          >
-            Trusted Home Healthcare
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 md:px-8 md:py-3">
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          {logoUrl ? (
+            <span
+              className={cn(
+                "grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg",
+                overlay ? "bg-white/95" : "bg-[#f0f7f6] ring-1 ring-[var(--line)]",
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoUrl} alt="" className="h-full w-full object-contain p-0.5" />
+            </span>
+          ) : null}
+          <span className="min-w-0">
+            <span
+              className={cn(
+                "font-display block truncate text-[1.35rem] leading-none tracking-[-0.03em] sm:text-[1.55rem]",
+                overlay ? "text-white" : "text-heading",
+              )}
+            >
+              {orgName}
+            </span>
+            <span
+              className={cn(
+                "mt-1 block truncate text-[9px] font-semibold uppercase tracking-[0.18em] sm:text-[10px] sm:tracking-[0.2em]",
+                overlay ? "text-white/65" : "text-primary",
+              )}
+            >
+              Trusted Home Healthcare
+            </span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 xl:flex">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "rounded-full px-3 py-2 text-[13px] font-medium transition",
-                overlay
-                  ? "text-white/80 hover:bg-white/10 hover:text-white"
-                  : "text-muted hover:bg-paper-2 hover:text-heading",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="relative z-50 hidden items-center gap-0.5 xl:flex">
+          {links.map((link) => {
+            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-full px-3 py-2 text-[13px] font-medium transition",
+                  overlay
+                    ? active
+                      ? "bg-white/15 text-white"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                    : active
+                      ? "bg-[#e8f5f3] text-primary"
+                      : "text-muted hover:bg-paper-2 hover:text-heading",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
@@ -84,7 +130,7 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
                 locale === "en"
                   ? overlay
                     ? "bg-white text-[#066670]"
-                    : "bg-primary text-[var(--sidebar-fg)]"
+                    : "bg-primary text-white"
                   : overlay
                     ? "text-white/70 hover:text-white"
                     : "text-muted hover:text-heading",
@@ -100,7 +146,7 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
                 locale === "hi"
                   ? overlay
                     ? "bg-white text-[#066670]"
-                    : "bg-primary text-[var(--sidebar-fg)]"
+                    : "bg-primary text-white"
                   : overlay
                     ? "text-white/70 hover:text-white"
                     : "text-muted hover:text-heading",
@@ -173,19 +219,28 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
           )}
         >
           <div className="flex flex-col gap-1">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "rounded-xl px-3 py-3 text-sm font-medium",
-                  overlay ? "text-white" : "text-heading",
-                )}
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "rounded-xl px-3 py-3 text-sm font-medium",
+                    overlay
+                      ? active
+                        ? "bg-white/15 text-white"
+                        : "text-white"
+                      : active
+                        ? "bg-[#e8f5f3] text-primary"
+                        : "text-heading",
+                  )}
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <a
               href="tel:+917073231360"
               className={cn(
@@ -196,25 +251,16 @@ export function SiteHeader({ tone = "light" }: { tone?: "light" | "dark" | "over
             >
               Call 70732 31360
             </a>
-            <div className="mt-2 grid gap-2">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "rounded-full px-4 py-3 text-center text-sm font-semibold",
-                  overlay ? "bg-white/10 text-white" : "bg-paper-2 text-heading",
-                )}
-              >
-                Login
-              </Link>
-              <Link
-                href="/book"
-                onClick={() => setOpen(false)}
-                className="btn btn-primary w-full"
-              >
-                Book a Nurse
-              </Link>
-            </div>
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "mt-2 rounded-full px-4 py-3 text-center text-sm font-semibold",
+                overlay ? "bg-white/10 text-white" : "bg-paper-2 text-heading",
+              )}
+            >
+              Login
+            </Link>
           </div>
         </div>
       ) : null}

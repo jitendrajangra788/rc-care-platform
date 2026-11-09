@@ -47,7 +47,7 @@ function RosterCell({
     <div
       ref={setNodeRef}
       className={cn(
-        "min-h-[4.5rem] border-b border-r border-[var(--line)] p-1.5 transition",
+        "min-h-[2.75rem] border-b border-r border-[var(--line)] p-1 transition",
         isToday && "bg-[var(--primary-soft)]/35",
         blocked && HATCH_UNAVAILABLE,
         isOver && "ring-2 ring-inset ring-[var(--primary)]",

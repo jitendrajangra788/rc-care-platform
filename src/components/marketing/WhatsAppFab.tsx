@@ -4,7 +4,11 @@ import { usePathname } from "next/navigation";
 
 export function WhatsAppFab() {
   const pathname = usePathname();
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/login")) {
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/print")
+  ) {
     return null;
   }
 

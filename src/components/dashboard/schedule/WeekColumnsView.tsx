@@ -31,7 +31,7 @@ export function WeekColumnsView({
   onOpen: (b: Booking) => void;
 }) {
   return (
-    <div className="grid gap-2 md:grid-cols-7">
+    <div className="grid gap-1.5 md:grid-cols-7">
       {weekDays.map((d) => {
         const iso = format(d, "yyyy-MM-dd");
         const list = filteredBookings.filter((b) => bookingTouchesDay(b, iso, asOf));
@@ -40,7 +40,7 @@ export function WeekColumnsView({
           <div
             key={iso}
             className={cn(
-              "min-h-[7rem] rounded-[var(--radius-xl)] border border-[var(--line)] bg-surface p-2",
+              "min-h-[4.25rem] rounded-[0.85rem] border border-[var(--line)] bg-surface p-1.5",
               selected && "ring-2 ring-primary/35",
             )}
           >

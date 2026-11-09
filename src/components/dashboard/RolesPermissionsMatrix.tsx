@@ -11,10 +11,10 @@ const ROLES: Role[] = [
   "care_coordinator",
   "nurse",
   "family",
-  "patient",
 ];
 
 function roleLabel(role: Role) {
+  if (role === "family") return "Family / Patient";
   return titleCase(role.replace(/_/g, " "));
 }
 

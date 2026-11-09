@@ -13,7 +13,11 @@ export default async function AdminSettingsPage() {
   const store = await getDbStoreInfo();
   return (
     <div className="dash-stack">
-      <PageHeader eyebrow="System" title="Settings" subtitle="Organization defaults for Roshan Care." />
+      <PageHeader
+        eyebrow="System"
+        title="Settings"
+        subtitle="Org profile, logo, email, phone — used on invoices and printed bills."
+      />
       {store.durable ? (
         <Alert tone="success" title="Database storage is durable">
           Mode: {store.mode}

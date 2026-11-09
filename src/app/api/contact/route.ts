@@ -9,11 +9,19 @@ export async function POST(req: Request) {
     email?: string;
     careType?: string;
     message?: string;
+    area?: string;
+    shift?: string;
   };
 
-  if (!body.name || !body.phone || !body.message) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  if (!body.name || !body.phone) {
+    return NextResponse.json({ error: "Name and phone are required" }, { status: 400 });
   }
+
+  const message =
+    body.message?.trim() ||
+    `Callback request · ${body.careType || "Home care"}${body.shift ? ` · ${body.shift}` : ""}${
+      body.area ? ` · Area: ${body.area}` : ""
+    }`;
 
   const db = await readDb();
   const lead = {
@@ -22,7 +30,7 @@ export async function POST(req: Request) {
     phone: body.phone.trim(),
     email: body.email?.trim(),
     careType: body.careType || "General enquiry",
-    message: body.message.trim(),
+    message,
     status: "new" as const,
     createdAt: new Date().toISOString(),
   };

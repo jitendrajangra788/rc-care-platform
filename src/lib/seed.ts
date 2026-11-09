@@ -54,7 +54,7 @@ export const seedDb: DbShape = {
       name: "Suresh Chandra",
       email: "patient@roshancare.in",
       password: hashPassword("patient123"),
-      role: "patient",
+      role: "family",
       phone: "+91 9876500022",
       active: true,
     },

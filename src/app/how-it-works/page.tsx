@@ -60,8 +60,8 @@ export default function HowItWorksPage() {
           <Link href="/book" className="btn btn-primary">
             Start a request <ArrowUpRight className="h-4 w-4" />
           </Link>
-          <Link href="/pricing" className="btn btn-outline">
-            View packages
+          <Link href="/contact" className="btn btn-outline">
+            Contact desk
           </Link>
         </div>
       </Section>

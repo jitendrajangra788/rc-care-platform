@@ -77,7 +77,7 @@ const ALL: Permission[] = [
 
 const MATRIX: Record<Role, Permission[]> = {
   super_admin: [...ALL],
-  admin: ALL.filter((p) => p !== "settings.write"),
+  admin: [...ALL],
   care_coordinator: [
     "patients.read",
     "patients.write",
@@ -126,11 +126,13 @@ const MATRIX: Record<Role, Permission[]> = {
     "complaints.read",
     "notifications.read",
   ],
+  // Legacy alias — always normalized to family
   patient: [
     "patients.read",
     "bookings.read",
-    "clinical.read",
+    "bookings.write",
     "billing.read",
+    "clinical.read",
     "complaints.write",
     "complaints.read",
     "notifications.read",
@@ -138,10 +140,11 @@ const MATRIX: Record<Role, Permission[]> = {
 };
 
 export function normalizeRole(role: string | undefined): Role {
+  // Family + patient are one portal (home-care account)
+  if (role === "patient") return "family";
   if (
     role === "super_admin" ||
     role === "care_coordinator" ||
-    role === "patient" ||
     role === "nurse" ||
     role === "family" ||
     role === "admin"

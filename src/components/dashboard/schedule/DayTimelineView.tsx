@@ -97,7 +97,7 @@ export function DayTimelineView({
               </div>
               <div
                 className={cn(
-                  "relative h-16 bg-paper-2/40",
+                  "relative h-12 bg-paper-2/40",
                   blocked && HATCH_UNAVAILABLE,
                 )}
               >

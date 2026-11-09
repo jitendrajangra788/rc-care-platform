@@ -20,40 +20,40 @@ export default async function NurseSchedulePage() {
   const onLeave = leaves.filter((l) => l.status === "approved" || l.status === "pending");
 
   return (
-    <div className="dash-stack pb-20 md:pb-0">
+    <div className="dash-stack !gap-1.5 pb-20 md:!gap-2 md:pb-0">
       <PageHeader
-        eyebrow="Nurse ops · Roster"
+        eyebrow="Roster"
         title="My schedule"
-        subtitle="Week view of assigned shifts, locations, and approved leave."
+        subtitle="Shifts, locations, and leave."
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <Link href="/dashboard/nurse/duties" className="btn btn-outline btn-sm">
               <ClipboardList className="h-3.5 w-3.5" /> Duties
             </Link>
             <Link href="/dashboard/nurse/attendance" className="btn btn-primary btn-sm">
-              <MapPinned className="h-3.5 w-3.5" /> Attendance
+              <MapPinned className="h-3.5 w-3.5" /> Present
             </Link>
           </div>
         }
       />
 
-      <div className="dash-grid-stats cols-3">
+      <div className="grid grid-cols-3 gap-1.5">
         <StatCard
-          label="Active duties"
+          label="Active"
           value={String(active.length)}
           tone="primary"
-          icon={<CalendarDays className="h-4 w-4" />}
+          icon={<CalendarDays className="h-3.5 w-3.5" />}
         />
         <StatCard
-          label="All assignments"
+          label="All"
           value={String(duties.length)}
-          icon={<ClipboardList className="h-4 w-4" />}
+          icon={<ClipboardList className="h-3.5 w-3.5" />}
         />
         <StatCard
-          label="Leave requests"
+          label="Leave"
           value={String(onLeave.length)}
           tone="warning"
-          icon={<Plane className="h-4 w-4" />}
+          icon={<Plane className="h-3.5 w-3.5" />}
         />
       </div>
 

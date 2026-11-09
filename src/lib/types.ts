@@ -258,6 +258,18 @@ export type AppSettings = {
   supportPhone: string;
   supportEmail: string;
   city: string;
+  /** Street / clinic address for invoices */
+  address?: string;
+  /** Billing contact / admin display name */
+  adminName?: string;
+  /** Logo as data URL or public path */
+  logoUrl?: string;
+  /** Optional GSTIN / tax id on bills */
+  gstin?: string;
+  /** Invoice footer / tagline */
+  invoiceTagline?: string;
+  /** UPI ID shown on printed bills */
+  upiId?: string;
   demoLogins: boolean;
   defaultGeofenceM: number;
   updatedAt?: string;

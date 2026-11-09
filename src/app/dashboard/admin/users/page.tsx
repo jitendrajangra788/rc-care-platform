@@ -13,8 +13,12 @@ export default async function AdminUsersPage() {
     return { ...safe, role: normalizeRole(safe.role) };
   });
   return (
-    <div className="dash-stack">
-      <PageHeader eyebrow="Access" title="Users & roles" subtitle="Create accounts and manage role access." />
+    <div className="dash-stack !gap-1.5 md:!gap-2">
+      <PageHeader
+        eyebrow="Access"
+        title="Users & roles"
+        subtitle="Create logins, edit accounts, and reset passwords. Stored passwords stay hashed."
+      />
       <UsersManager users={users} />
       <RolesPermissionsMatrix />
     </div>

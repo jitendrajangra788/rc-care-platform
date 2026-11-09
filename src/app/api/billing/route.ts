@@ -9,11 +9,11 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const db = await readDb();
   const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
-  if (isStaffOpsRole(normalizeRole(session.role))) return NextResponse.json({ invoices: db.invoices });
-  if (session.role === "family" || session.role === "patient") {
-    const myBookingIds = new Set(
-      db.bookings.filter((b) => b.familyUserId === session.id).map((b) => b.id),
-    );
+  const role = normalizeRole(session.role);
+  if (isStaffOpsRole(role)) return NextResponse.json({ invoices: db.invoices });
+  if (role === "family") {
+    const { bookingsForUser } = await import("@/lib/scope");
+    const myBookingIds = new Set(bookingsForUser(db, session).map((b) => b.id));
     return NextResponse.json({
       invoices: db.invoices.filter((i) => myBookingIds.has(i.bookingId)),
     });

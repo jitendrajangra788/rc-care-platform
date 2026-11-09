@@ -28,111 +28,122 @@ export const faqItems: FaqItem[] = [
   {
     category: "Booking",
     q: {
-      en: "How quickly can a nurse be assigned?",
-      hi: "Nurse kitni jaldi assign hoti hai?",
+      en: "How do I book a home nurse in Bhilwara?",
+      hi: "Bhilwara me home nurse kaise book karein?",
     },
     a: {
-      en: "For urgent cases we try same-day cover. Standard requests are usually matched within 24 hours, depending on skill, shift length, and area. The care desk confirms ETA on WhatsApp or phone.",
-      hi: "Urgent cases me same-day cover try karte hain. Standard requests usually 24 hours me match ho jaate hain — skill, shift length, aur area pe depend karta hai. Care desk WhatsApp / call pe ETA confirm karti hai.",
+      en: "Call +91 70732 31360, WhatsApp the care desk, or submit the online booking form. Share the patient condition, address, and preferred shift (8 / 12 / 24 hour). We confirm staff and timing quickly.",
+      hi: "Call +91 70732 31360, WhatsApp, ya online form se book karein. Patient ki condition, address, aur shift (8 / 12 / 24 hour) bata dein. Staff aur timing jaldi confirm ho jati hai.",
     },
   },
   {
     category: "Booking",
     q: {
-      en: "What happens after I book online?",
-      hi: "Online book ke baad kya hota hai?",
+      en: "Can I get a nurse at home today?",
+      hi: "Kya aaj hi ghar pe nurse mil sakti hai?",
     },
     a: {
-      en: "Your request reaches the care desk. The team verifies patient needs, address, and shift, then assigns verified staff. You get confirmation by call or WhatsApp.",
-      hi: "Request care desk ko milti hai. Team patient need, address, aur shift verify karti hai, phir verified staff assign hoti hai. Aapko call / WhatsApp pe confirmation milta hai.",
+      en: "Yes — for urgent home nursing we try same-day assignment in Bhilwara when staff is available. Standard requests are usually matched within 24 hours. The desk confirms ETA on call or WhatsApp.",
+      hi: "Haan — urgent home nursing me Bhilwara me same-day try karte hain jab staff free ho. Normal requests usually 24 hours me match hoti hain. Desk call / WhatsApp pe ETA batati hai.",
     },
   },
   {
     category: "Pricing",
     q: {
-      en: "Are the package rates final?",
-      hi: "Package rate final hai kya?",
+      en: "What is the cost of home nursing care?",
+      hi: "Home nursing ka charge kitna hota hai?",
     },
     a: {
-      en: "Listed rates are starting packages (₹900 / ₹1,200 / ₹2,200 by shift type). Final quotes depend on clinical complexity, night cover, or specialist skill — always confirmed clearly before care starts.",
-      hi: "Listed rates starting packages hain (₹900 / ₹1,200 / ₹2,200 per shift type). Clinical complexity, night cover, ya specialist skill pe final quote care desk confirm karti hai — pehle clear bataya jata hai.",
+      en: "Charges depend on shift length and care type (attendant, skilled nurse, night cover, or specialised skill). You get a clear quote before care starts — no hidden add-ons after confirmation.",
+      hi: "Charge shift length aur care type pe depend karta hai (attendant, skilled nurse, night cover, ya special skill). Care start se pehle clear quote milta hai — confirm ke baad hidden charge nahi.",
     },
   },
   {
     category: "Pricing",
     q: {
-      en: "How do payments work?",
-      hi: "Payment kaise hota hai?",
+      en: "How do I pay for nursing or attendant service?",
+      hi: "Nursing / attendant payment kaise karein?",
     },
     a: {
-      en: "Pay by cash, UPI, or invoice. Billing status appears in the family portal. For continuous monthly care, slips and statements are available from the care desk.",
-      hi: "Cash, UPI, ya invoice ke through. Family portal pe billing status dikhta hai. Monthly continuous care pe slip / statement care desk se mil sakta hai.",
+      en: "Pay by UPI, cash, or invoice. Billing status shows in the family portal. For monthly elderly care or 24-hour nursing, the desk shares regular slips and due amounts.",
+      hi: "UPI, cash, ya invoice se pay karein. Family portal pe billing status dikhta hai. Monthly elderly care ya 24-hour nursing pe desk slip aur due amount share karti hai.",
     },
   },
   {
     category: "Care",
     q: {
-      en: "Which services do you offer?",
-      hi: "Kaun-kaun si services milti hain?",
+      en: "Which home care services do you provide?",
+      hi: "Kaun-kaun si home care services milti hain?",
     },
     a: {
-      en: "Skilled nursing, elderly attendant care, post-surgery support, mother & baby care, wound care, injections / IV support, vitals logging, and medicine charts — in 8hr / 12hr / 24hr shifts.",
-      hi: "Skilled nursing, elderly attendant care, post-surgery support, mother & baby, wound care, injections / IV support, vitals logging, aur medicine chart — shift ke hisaab se 8hr / 12hr / 24hr.",
+      en: "Home nurse, elderly care attendant, post-surgery nursing, baby care, physiotherapy at home, doctor home visit support, medical equipment on rent, and 24×7 ambulance coordination.",
+      hi: "Home nurse, elderly care attendant, post-surgery nursing, baby care, ghar pe physiotherapy, doctor home visit, medical equipment rent, aur 24×7 ambulance coordination.",
     },
   },
   {
     category: "Care",
     q: {
-      en: "How are staff replacements handled?",
-      hi: "Staff replace kaise hota hai?",
+      en: "Do you provide 12-hour and 24-hour nursing shifts?",
+      hi: "12-hour aur 24-hour nursing shift milti hai?",
     },
     a: {
-      en: "For leave, delay, or emergencies the care desk assigns backup staff. You are informed by call or WhatsApp so the patient is never left without cover.",
-      hi: "Leave, delay, ya emergency pe care desk backup assign karti hai. Aapko call / WhatsApp pe confirm kiya jata hai taaki patient alone na rahe.",
+      en: "Yes. Families commonly book 8-hour day visits, 12-hour extended care, or 24-hour round-the-clock nursing / attendant cover for elders and bed-bound patients.",
+      hi: "Haan. Aksar 8-hour day visit, 12-hour extended care, ya 24-hour round-the-clock nursing / attendant cover book hota hai — elders aur bed-bound patients ke liye.",
+    },
+  },
+  {
+    category: "Care",
+    q: {
+      en: "What if the assigned nurse is late or on leave?",
+      hi: "Agar assigned nurse late ya leave pe ho to?",
+    },
+    a: {
+      en: "The care desk arranges backup staff for leave, delay, or emergency. You are informed on call or WhatsApp so the patient is not left without cover.",
+      hi: "Leave, delay, ya emergency pe care desk backup staff arrange karti hai. Aapko call / WhatsApp pe bataya jata hai taaki patient alone na rahe.",
     },
   },
   {
     category: "Family",
     q: {
-      en: "How do families receive updates?",
-      hi: "Family updates kaise milte hain?",
+      en: "How will my family get daily care updates?",
+      hi: "Family ko daily care update kaise milenge?",
     },
     a: {
-      en: "Family login shows duty status, medicine charts, and care notes. Attendance is marked with GPS and a site photo, so every shift stays transparent.",
-      hi: "Family login pe duty status, medicine chart, aur care notes dikhte hain. Attendance GPS + site photo ke saath mark hoti hai, isliye shift transparency rehti hai.",
+      en: "Family portal login shows duty status, medicine chart, and shift notes. Attendance is marked with location so every home nursing visit stays transparent.",
+      hi: "Family portal login pe duty status, medicine chart, aur shift notes dikhte hain. Attendance location ke saath mark hoti hai — har home nursing visit transparent rehti hai.",
     },
   },
   {
     category: "Family",
     q: {
-      en: "Can I follow live care progress?",
-      hi: "Kya main live care dekh sakta hoon?",
+      en: "Is home nursing safe for elderly parents living alone?",
+      hi: "Akela rehne wale elders ke liye home nursing safe hai?",
     },
     a: {
-      en: "Yes — assigned family accounts can open Live Care / Updates for recent notes, medicines, and duty progress. SOS and complaints can also be raised from the portal.",
-      hi: "Haan — assigned family account pe live care / updates section me recent notes, meds, aur duty progress dikhta hai. SOS / complaints bhi portal se raise ho sakte hain.",
+      en: "Yes — verified attendants and nurses support medicine timing, mobility, hygiene, and companionship. Families abroad or in another city can track updates from the portal.",
+      hi: "Haan — verified attendant / nurse medicine timing, mobility, hygiene, aur companionship sambhalte hain. Bahar ya dusre city me family portal se updates dekh sakti hai.",
     },
   },
   {
     category: "Staff",
     q: {
-      en: "How are nurses verified?",
-      hi: "Nurses verified kaise hote hain?",
+      en: "Are your nurses and attendants verified?",
+      hi: "Kya nurses aur attendants verified hain?",
     },
     a: {
-      en: "Staff join the roster after document checks, skill matching, and local reliability review. On duty they use GPS geofence plus photo attendance for advanced tracking.",
-      hi: "Documents, skill match, aur local reliability check ke baad roster pe aate hain. Duty pe GPS geofence + photo attendance hoti hai — advanced tracking ke saath.",
+      en: "Yes. Staff join after document checks and skill matching. On duty they mark attendance from the care address so families know who arrived and when.",
+      hi: "Haan. Document check aur skill match ke baad staff join karti hai. Duty pe care address se attendance mark hoti hai — family ko pata rehta hai kaun aayi aur kab.",
     },
   },
   {
     category: "Staff",
     q: {
-      en: "Do you serve areas outside Bhilwara?",
-      hi: "Bhilwara ke bahar service hai?",
+      en: "Which areas in Bhilwara do you cover?",
+      hi: "Bhilwara me kaun-kaun se areas cover hote hain?",
     },
     a: {
-      en: "Our primary focus is the Bhilwara city belt. Nearby areas are considered case by case based on staff reachability — please mention the area clearly when booking.",
-      hi: "Primary focus Bhilwara city belt hai. Nearby areas pe request ke hisaab se staff reachability confirm karke decide karte hain — booking pe area zaroor likhein.",
+      en: "We cover Bhilwara city and nearby localities such as Subhash Nagar, Bapu Nagar, Shastri Nagar, and surrounding belts. Mention your exact area while booking for faster matching.",
+      hi: "Bhilwara city aur nearby areas — Subhash Nagar, Bapu Nagar, Shastri Nagar, aur aas-paas. Jaldi match ke liye booking pe exact area zaroor likhein.",
     },
   },
 ];

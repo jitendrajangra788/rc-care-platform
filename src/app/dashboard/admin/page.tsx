@@ -22,8 +22,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { IconBadge } from "@/components/ui/IconBadge";
 import { leadFunnelColors } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 function monthKey(iso: string) {
   return iso.slice(0, 7);
@@ -44,9 +44,7 @@ function buildRevenueSeries(
   const keys: string[] = [];
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    keys.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-    );
+    keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
 
   const billed = Object.fromEntries(keys.map((k) => [k, 0]));
@@ -95,7 +93,7 @@ export default async function AdminDashboardPage() {
   const pendingLeaves = (db.leaves || []).filter((l) => l.status === "pending").length;
   const newLeads = db.leads.filter((l) => l.status === "new").length;
   const weakGps = db.attendance.filter((a) => a.gpsQuality === "weak").length;
-  const activities = (db.activities || []).slice(0, 8);
+  const activities = (db.activities || []).slice(0, 10);
 
   const workload = dailyWorkload(db.bookings, today);
   const todayActiveDuties = workload.bookings.filter(
@@ -144,7 +142,7 @@ export default async function AdminDashboardPage() {
   if (urgentBookings.length > 0)
     alerts.push({
       title: `${urgentBookings.length} urgent bookings`,
-      detail: "Priority care cases need attention",
+      detail: "Priority care cases",
       href: "/dashboard/admin/bookings",
       tone: "danger",
     });
@@ -158,153 +156,158 @@ export default async function AdminDashboardPage() {
   if (unpaidInvoices > 0)
     alerts.push({
       title: `${unpaidInvoices} unpaid invoices`,
-      detail: `${formatCurrency(outstanding)} outstanding`,
+      detail: `${formatCurrency(outstanding)} due`,
       href: "/dashboard/admin/billing",
       tone: "warning",
     });
   if (newLeads > 0)
     alerts.push({
       title: `${newLeads} new leads`,
-      detail: "Enquiry pipeline waiting",
+      detail: "Enquiry pipeline",
       href: "/dashboard/admin/leads",
       tone: "primary",
     });
   if (weakGps > 0)
     alerts.push({
-      title: `${weakGps} weak GPS marks`,
-      detail: "Review attendance trail",
+      title: `${weakGps} weak GPS`,
+      detail: "Review attendance",
       href: "/dashboard/admin/attendance",
       tone: "warning",
     });
   if (workload.unassigned > 0)
     alerts.push({
       title: `${workload.unassigned} unassigned today`,
-      detail: "Duties without a nurse",
+      detail: "Needs nurse",
       href: "/dashboard/admin/schedule",
       tone: "warning",
     });
 
+  const shortcuts = [
+    { href: "/dashboard/admin/bookings", label: "Bookings", icon: CalendarDays },
+    { href: "/dashboard/admin/schedule", label: "Schedule", icon: ClipboardList },
+    { href: "/dashboard/admin/staff", label: "Staff", icon: Users },
+    { href: "/dashboard/admin/attendance", label: "Attendance", icon: MapPinned },
+    { href: "/dashboard/admin/billing", label: "Billing", icon: Receipt },
+  ] as const;
+
   return (
-    <div className="dash-stack">
+    <div className="dash-stack !gap-1.5 md:!gap-2">
       <PageHeader
         eyebrow="Admin"
-        title="Care desk overview"
-        subtitle="Live snapshot of bookings, staff, attendance, collections, and ops alerts."
+        title="Care desk"
+        subtitle="Bookings, staff, collections, and alerts."
         action={
-          <Link href="/dashboard/admin/bookings" className="btn btn-primary btn-sm">
-            New booking <ArrowUpRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Link href="/dashboard/admin/schedule" className="btn btn-outline btn-sm hidden sm:inline-flex">
+              Schedule
+            </Link>
+            <Link href="/dashboard/admin/bookings" className="btn btn-primary btn-sm">
+              New booking <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         }
       />
 
-      <div className="dash-grid-stats cols-4">
-        <StatCard
-          label="Today's active duties"
-          value={String(todayActiveDuties.length)}
-          hint={`${workload.total} on board · ${workload.unassigned} unassigned`}
-          tone="primary"
-          icon={<ClipboardList className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Pending / unassigned"
-          value={String(pendingUnassigned.length)}
-          hint={`${pending} pending · ${active} active overall`}
-          tone={pendingUnassigned.length > 0 ? "warning" : "default"}
-          icon={<CalendarDays className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Active nurses"
-          value={String(onDutyNurses)}
-          hint={`${availableStaff} available · ${todayAttendance} attendance today`}
-          tone="success"
-          icon={<Users className="h-4 w-4" />}
-        />
-        <StatCard
-          label="Pending payments"
-          value={formatCurrency(outstanding)}
-          hint={`${unpaidInvoices} invoices open · ${formatCurrency(revenue)} collected`}
-          tone={outstanding > 0 ? "warning" : "default"}
-          icon={<Receipt className="h-4 w-4" />}
-        />
-      </div>
-
-      <AdminCharts revenue={revenueSeries} funnel={funnel} />
-
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["/dashboard/admin/bookings", "Bookings", CalendarDays],
-          ["/dashboard/admin/staff", "Staff", Users],
-          ["/dashboard/admin/attendance", "Attendance", MapPinned],
-          ["/dashboard/admin/billing", "Billing", Receipt],
-        ].map(([href, label, Icon]) => (
+      {/* Compact shortcut rail */}
+      <div className="chip-rail -mx-0.5 overflow-x-auto px-0.5 pb-0.5">
+        {shortcuts.map(({ href, label, icon: Icon }) => (
           <Link
-            key={href as string}
-            href={href as string}
-            className="rc-card flex items-center gap-2 p-4"
+            key={href}
+            href={href}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--line)] bg-white px-2.5 py-1.5 text-xs font-semibold text-heading shadow-[var(--shadow-xs)] transition hover:border-primary/30 hover:bg-[var(--primary-soft)]"
           >
-            <IconBadge tone="primary">
-              <Icon className="h-4 w-4" />
-            </IconBadge>
-            <span className="text-sm font-semibold text-heading">{label as string}</span>
-            <ArrowUpRight className="ml-auto h-4 w-4 text-muted" />
+            <Icon className="h-3.5 w-3.5 text-primary" />
+            {label}
           </Link>
         ))}
       </div>
 
+      <div className="dash-grid-stats cols-4">
+        <StatCard
+          label="Today's duties"
+          value={String(todayActiveDuties.length)}
+          hint={`${workload.total} on board · ${workload.unassigned} open`}
+          tone="primary"
+          icon={<ClipboardList className="h-3.5 w-3.5" />}
+        />
+        <StatCard
+          label="Pending / open"
+          value={String(pendingUnassigned.length)}
+          hint={`${pending} pending · ${active} active`}
+          tone={pendingUnassigned.length > 0 ? "warning" : "default"}
+          icon={<CalendarDays className="h-3.5 w-3.5" />}
+        />
+        <StatCard
+          label="Active nurses"
+          value={String(onDutyNurses)}
+          hint={`${availableStaff} free · ${todayAttendance} present`}
+          tone="success"
+          icon={<Users className="h-3.5 w-3.5" />}
+        />
+        <StatCard
+          label="Outstanding"
+          value={formatCurrency(outstanding)}
+          hint={`${unpaidInvoices} open · ${formatCurrency(revenue)} paid`}
+          tone={outstanding > 0 ? "warning" : "default"}
+          icon={<Receipt className="h-3.5 w-3.5" />}
+        />
+      </div>
+
       {alerts.length > 0 ? (
-        <Panel title="Operational alerts" subtitle="Items that need desk attention">
-          <div className="grid gap-2 md:grid-cols-2">
-            {alerts.map((a) => (
-              <Link
-                key={a.title}
-                href={a.href}
-                className="flex items-start gap-2 rounded-[var(--radius-lg)] border border-[var(--line)] bg-paper-2/80 px-2.5 py-2 transition hover:border-primary/25"
-              >
-                <AlertTriangle
-                  className={
-                    a.tone === "danger"
-                      ? "mt-0.5 h-4 w-4 text-danger"
-                      : a.tone === "warning"
-                        ? "mt-0.5 h-4 w-4 text-warning"
-                        : "mt-0.5 h-4 w-4 text-primary"
-                  }
-                />
-                <div>
-                  <p className="text-sm font-semibold text-heading">{a.title}</p>
-                  <p className="text-xs text-muted">{a.detail}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Panel>
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 md:flex-wrap md:overflow-visible">
+          {alerts.map((a) => (
+            <Link
+              key={a.title}
+              href={a.href}
+              className={cn(
+                "inline-flex min-w-[11rem] shrink-0 items-start gap-1.5 rounded-[0.75rem] border px-2.5 py-2 md:min-w-0 md:flex-1",
+                a.tone === "danger" && "border-danger/25 bg-[var(--danger-soft)]",
+                a.tone === "warning" && "border-warning/25 bg-[var(--warning-soft)]",
+                a.tone === "primary" && "border-primary/25 bg-[var(--primary-soft)]",
+              )}
+            >
+              <AlertTriangle
+                className={cn(
+                  "mt-0.5 h-3.5 w-3.5 shrink-0",
+                  a.tone === "danger" && "text-danger",
+                  a.tone === "warning" && "text-warning",
+                  a.tone === "primary" && "text-primary",
+                )}
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold text-heading">{a.title}</span>
+                <span className="block text-[10px] text-muted">{a.detail}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
       ) : null}
 
-      <div className="grid gap-2 xl:grid-cols-3">
+      <AdminCharts revenue={revenueSeries} funnel={funnel} />
+
+      <div className="grid gap-2 lg:grid-cols-3">
         <Panel
           title="Today's duties"
           action={
-            <Link href="/dashboard/admin/schedule" className="text-sm font-semibold text-primary">
+            <Link href="/dashboard/admin/schedule" className="text-xs font-semibold text-primary">
               Schedule →
             </Link>
           }
         >
           {todayActiveDuties.length === 0 ? (
-            <EmptyState
-              title="No active duties today"
-              description="Assigned care shifts for today will appear here."
-            />
+            <p className="py-2 text-sm text-muted">No active duties today.</p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {todayActiveDuties.slice(0, 6).map((b) => {
                 const nurse = db.staff.find((s) => s.id === b.assignedStaffId);
                 return (
                   <div
                     key={b.id}
-                    className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] bg-paper-2 px-2.5 py-2"
+                    className="flex items-center justify-between gap-2 rounded-[0.7rem] bg-[var(--surface-muted)]/70 px-2 py-1.5"
                   >
                     <div className="min-w-0">
-                      <p className="font-name truncate text-heading">{b.patientName}</p>
-                      <p className="text-xs text-muted">
+                      <p className="truncate text-sm font-semibold text-heading">{b.patientName}</p>
+                      <p className="truncate text-[10px] text-muted">
                         {b.careType} · {b.shift}
                         {nurse ? ` · ${nurse.name}` : ""}
                       </p>
@@ -320,35 +323,30 @@ export default async function AdminDashboardPage() {
         <Panel
           title="Pending / unassigned"
           action={
-            <Link href="/dashboard/admin/bookings" className="text-sm font-semibold text-primary">
+            <Link href="/dashboard/admin/bookings" className="text-xs font-semibold text-primary">
               Manage →
             </Link>
           }
         >
           {pendingUnassigned.length === 0 ? (
-            <EmptyState
-              title="Queue clear"
-              description="No pending or unassigned bookings."
-            />
+            <p className="py-2 text-sm text-muted">Queue clear.</p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {pendingUnassigned.slice(0, 6).map((b) => (
                 <div
                   key={b.id}
-                  className="flex items-center justify-between gap-2 rounded-[var(--radius-lg)] bg-paper-2 px-2.5 py-2"
+                  className="flex items-center justify-between gap-2 rounded-[0.7rem] bg-[var(--surface-muted)]/70 px-2 py-1.5"
                 >
                   <div className="min-w-0">
-                    <p className="font-name truncate text-heading">{b.patientName}</p>
-                    <p className="text-xs text-muted">
+                    <p className="truncate text-sm font-semibold text-heading">{b.patientName}</p>
+                    <p className="truncate text-[10px] text-muted">
                       {b.id} · {b.careType} · {b.shift}
                     </p>
                   </div>
                   <StatusBadge
                     status={b.status}
                     label={
-                      !b.assignedStaffId && b.status !== "pending"
-                        ? "unassigned"
-                        : undefined
+                      !b.assignedStaffId && b.status !== "pending" ? "unassigned" : undefined
                     }
                   />
                 </div>
@@ -360,28 +358,27 @@ export default async function AdminDashboardPage() {
         <Panel
           title="New leads"
           action={
-            <Link href="/dashboard/admin/leads" className="text-sm font-semibold text-primary">
-              All leads →
+            <Link href="/dashboard/admin/leads" className="text-xs font-semibold text-primary">
+              All →
             </Link>
           }
         >
           {db.leads.length === 0 ? (
-            <EmptyState title="No leads" description="Enquiries will appear here." />
+            <p className="py-2 text-sm text-muted">No leads yet.</p>
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {db.leads.slice(0, 5).map((l) => (
                 <div
                   key={l.id}
-                  className="rounded-[var(--radius-lg)] border border-[var(--line)] px-2.5 py-2"
+                  className="rounded-[0.7rem] border border-[var(--line)] px-2 py-1.5"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-name text-heading">{l.name}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-sm font-semibold text-heading">{l.name}</p>
                     <StatusBadge status={l.status} />
                   </div>
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="mt-0.5 truncate text-[10px] text-muted">
                     {l.careType} · {l.phone}
                   </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted">{l.message}</p>
                 </div>
               ))}
             </div>
@@ -393,19 +390,27 @@ export default async function AdminDashboardPage() {
         {activities.length === 0 ? (
           <EmptyState title="No activity yet" description="Ops feed fills as teams work." />
         ) : (
-          <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
+          <ol className="relative ml-1.5 space-y-0 border-l border-[var(--line)]">
             {activities.map((a) => (
-              <div key={a.id} className="rounded-[var(--radius-lg)] bg-paper-2 px-2.5 py-2">
-                <p className="text-sm font-semibold text-heading">{a.title}</p>
+              <li key={a.id} className="relative pb-2.5 pl-4 last:pb-0">
+                <span className="absolute -left-[4px] top-1.5 h-2 w-2 rounded-full bg-[#087F8C] ring-2 ring-white" />
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                  <p className="text-sm font-semibold text-heading">{a.title}</p>
+                  <p className="text-[10px] text-muted">
+                    {new Date(a.createdAt).toLocaleString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
                 {a.detail ? (
-                  <p className="mt-0.5 line-clamp-2 text-xs text-muted">{a.detail}</p>
+                  <p className="line-clamp-1 text-[11px] text-muted">{a.detail}</p>
                 ) : null}
-                <p className="mt-1 text-[11px] text-muted">
-                  {new Date(a.createdAt).toLocaleString("en-IN")}
-                </p>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
       </Panel>
     </div>

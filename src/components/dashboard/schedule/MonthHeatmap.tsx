@@ -39,7 +39,7 @@ export function MonthHeatmap({
             type="button"
             onClick={() => onSelectDay(iso, d)}
             className={cn(
-              "min-h-[4rem] rounded-[var(--radius-lg)] border p-2 text-left transition focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
+              "min-h-[2.75rem] rounded-[0.7rem] border p-1.5 text-left transition focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
               inMonth ? "border-[var(--line)]" : "border-transparent text-muted",
               selected && "ring-2 ring-primary/40",
               isSameDay(d, new Date()) && "border-primary/40",

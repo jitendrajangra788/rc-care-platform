@@ -1,39 +1,36 @@
-import Image from "next/image";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 
 export function PageHero({
   title,
   subtitle,
-  image = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=2000&q=80",
+  orgName = "Roshan Care",
+  logoUrl,
 }: {
   title: string;
   subtitle: string;
+  /** @deprecated kept for call-site compatibility — photos removed */
   image?: string;
+  orgName?: string;
+  logoUrl?: string;
 }) {
   return (
-    <div className="relative overflow-hidden bg-[#0d2130] text-white">
-      <Image
-        src={image}
-        alt=""
-        fill
-        priority
-        className="object-cover object-center opacity-35"
-        sizes="100vw"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0d2130]/75 via-[#0d2130]/80 to-[#0d2130]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(8,127,140,0.35),transparent_42%),radial-gradient(circle_at_90%_10%,rgba(221,245,236,0.12),transparent_35%)]" />
-      <SiteHeader tone="overlay" />
-      <div className="relative mx-auto max-w-6xl px-5 pb-10 pt-6 md:px-8 md:pb-12 md:pt-8">
-        <p className="font-display text-3xl tracking-[-0.03em] text-white md:text-4xl">
-          Roshan Care
+    <div className="relative overflow-hidden bg-[linear-gradient(145deg,#0b1f33_0%,#0d3d42_55%,#0f766e_120%)] text-white">
+      <div className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
+      <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
+
+      {/* relative + z-index so nav stays clickable above decorative layers */}
+      <div className="relative z-20">
+        <SiteHeader tone="overlay" orgName={orgName} logoUrl={logoUrl} />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-7 pt-5 sm:px-5 md:px-8 md:pb-9 md:pt-7">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--secondary-deep)] sm:text-[11px]">
+          {orgName} · Bhilwara
         </p>
-        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--secondary-deep)]">
-          Trusted Home Healthcare
-        </p>
-        <h1 className="font-display mt-8 max-w-3xl text-3xl leading-[1.08] tracking-[-0.03em] text-white/95 md:text-5xl">
+        <h1 className="font-display mt-2 max-w-3xl text-[clamp(1.55rem,5vw,2.5rem)] leading-[1.1] tracking-[-0.03em] text-white">
           {title}
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/72 sm:text-[15px]">
           {subtitle}
         </p>
       </div>

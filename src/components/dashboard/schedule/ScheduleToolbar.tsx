@@ -75,75 +75,70 @@ export function ScheduleToolbar({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="shrink-0"
-            onClick={onPrev}
-            aria-label="Previous"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0 flex-1">
-            <p className="font-display truncate text-lg text-heading sm:text-xl">
-              {anchorLabel}
-            </p>
-            <p className="truncate text-xs text-muted">
-              Selected · {formatDate(parseISO(selectedDay + "T12:00:00"))}
-            </p>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="shrink-0"
-            onClick={onNext}
-            aria-label="Next"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+      <div className="flex items-center gap-1.5">
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="shrink-0"
+          onClick={onPrev}
+          aria-label="Previous"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <p className="font-display truncate text-base leading-tight text-heading sm:text-lg">
+            {anchorLabel}
+          </p>
+          <p className="truncate text-[11px] text-muted">
+            {formatDate(parseISO(selectedDay + "T12:00:00"))}
+          </p>
         </div>
-
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <div
-            role="tablist"
-            aria-label="Calendar view"
-            className="hidden rounded-[var(--radius-xl)] border border-[var(--line)] bg-paper-2 p-1 md:flex"
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="shrink-0"
+          onClick={onNext}
+          aria-label="Next"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        {onOpenMobileFilters ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="shrink-0 md:hidden"
+            onClick={onOpenMobileFilters}
           >
-            {MODES.map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                onClick={() => onModeChange(m)}
-                className={cn(
-                  "rounded-[var(--radius-lg)] px-3 py-1.5 text-sm font-semibold capitalize focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
-                  mode === m ? "bg-surface text-heading shadow-sm" : "text-muted hover:text-heading",
-                )}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          {onOpenMobileFilters ? (
-            <Button
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
+        <div
+          role="tablist"
+          aria-label="Calendar view"
+          className="hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-paper-2 p-0.5 md:flex"
+        >
+          {MODES.map((m) => (
+            <button
+              key={m}
               type="button"
-              size="sm"
-              variant="secondary"
-              className="w-full md:hidden"
-              onClick={onOpenMobileFilters}
+              role="tab"
+              aria-selected={mode === m}
+              onClick={() => onModeChange(m)}
+              className={cn(
+                "rounded-[var(--radius-md)] px-2.5 py-1 text-xs font-semibold capitalize",
+                mode === m ? "bg-surface text-heading shadow-sm" : "text-muted hover:text-heading",
+              )}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Filters
-            </Button>
-          ) : null}
+              {m}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="hidden grid-cols-1 gap-2 md:grid md:grid-cols-12">
+      <div className="hidden grid-cols-1 gap-1.5 md:grid md:grid-cols-12">
         <div className="md:col-span-4">
           <SearchInput
             value={query}
@@ -155,7 +150,7 @@ export function ScheduleToolbar({
         <label className="md:col-span-3">
           <span className="sr-only">Nurse</span>
           <select
-            className="field w-full text-sm focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="field w-full !py-1.5 text-sm"
             value={nurseFilter}
             onChange={(e) => onNurseFilterChange(e.target.value)}
           >
@@ -170,7 +165,7 @@ export function ScheduleToolbar({
         <label className="md:col-span-3">
           <span className="sr-only">Status</span>
           <select
-            className="field w-full text-sm focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="field w-full !py-1.5 text-sm"
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
           >
@@ -186,45 +181,22 @@ export function ScheduleToolbar({
         <label className="flex items-center gap-2 md:col-span-2">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-[var(--line)] text-primary focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="h-4 w-4 rounded border-[var(--line)] text-primary"
             checked={unassignedOnly}
             onChange={(e) => onUnassignedOnlyChange(e.target.checked)}
           />
-          <span className="text-sm font-medium text-heading">Unassigned only</span>
+          <span className="text-xs font-medium text-heading">Open only</span>
         </label>
       </div>
 
-      {/* Mobile view mode pills */}
-      <div
-        role="tablist"
-        aria-label="Calendar view"
-        className="flex gap-1 overflow-x-auto rounded-[var(--radius-xl)] border border-[var(--line)] bg-paper-2 p-1 md:hidden"
-      >
-        {MODES.map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="tab"
-            aria-selected={mode === m}
-            onClick={() => onModeChange(m)}
-            className={cn(
-              "shrink-0 rounded-[var(--radius-lg)] px-3 py-1.5 text-sm font-semibold capitalize focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
-              mode === m ? "bg-surface text-heading shadow-sm" : "text-muted",
-            )}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
-
       {chips.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {chips.map((chip) => (
             <button
               key={chip.id}
               type="button"
               onClick={chip.onClear}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-surface px-2.5 py-1 text-xs font-semibold text-heading focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-surface px-2 py-0.5 text-[11px] font-semibold text-heading"
             >
               {chip.label}
               <X className="h-3 w-3 text-muted" aria-hidden />
@@ -263,7 +235,7 @@ export function ScheduleFiltersForm({
   staff: Staff[];
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <SearchInput
         value={query}
         onChange={onQueryChange}

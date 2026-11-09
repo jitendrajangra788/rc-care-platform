@@ -5,6 +5,5 @@ export function dashboardPathForRole(role: Role) {
   const r = normalizeRole(role);
   if (isStaffOpsRole(r)) return "/dashboard/admin";
   if (r === "nurse") return "/dashboard/nurse";
-  if (r === "patient") return "/dashboard/patient";
   return "/dashboard/family";
 }

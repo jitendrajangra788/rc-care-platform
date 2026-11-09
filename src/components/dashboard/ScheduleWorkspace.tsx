@@ -359,13 +359,13 @@ export function ScheduleWorkspace({
   }
 
   return (
-    <div className="dash-stack">
+    <div className="dash-stack !gap-1.5 md:!gap-2">
       <PageHeader
-        eyebrow="Care scheduling"
+        eyebrow="Scheduling"
         title="Duty calendar"
-        subtitle="Nurses ki duty assign karo, badlo aur conflicts dekho."
+        subtitle="Assign, replace, and spot conflicts."
         action={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <Button type="button" variant="secondary" size="sm" onClick={goToday}>
               Today
             </Button>
@@ -376,13 +376,14 @@ export function ScheduleWorkspace({
               loading={pending}
               onClick={() => startTransition(() => router.refresh())}
             >
-              <RefreshCw className="h-3.5 w-3.5" /> Refresh
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <Link
               href="/dashboard/admin/bookings"
               className="btn btn-primary btn-sm inline-flex items-center focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
             >
-              + New duty
+              + Duty
             </Link>
           </div>
         }
@@ -402,150 +403,178 @@ export function ScheduleWorkspace({
         }}
       />
 
-      <section className="soft-panel space-y-1.5 p-2 md:p-2.5">
-        <ScheduleToolbar
-          mode={mode}
-          onModeChange={(m) => {
-            setMode(m);
-            if (m === "day") setAnchor(parseISO(selectedDay + "T12:00:00"));
-          }}
-          anchorLabel={shiftLabel()}
-          selectedDay={selectedDay}
-          onPrev={goPrev}
-          onNext={goNext}
-          query={query}
-          onQueryChange={setQuery}
-          nurseFilter={nurseFilter}
-          onNurseFilterChange={setNurseFilter}
-          statusFilter={statusFilter}
-          onStatusFilterChange={(v) => {
-            setStatusFilter(v);
-            if (v === "unassigned") setUnassignedOnly(true);
-            else if (unassignedOnly && v !== "") setUnassignedOnly(false);
-          }}
-          unassignedOnly={unassignedOnly}
-          onUnassignedOnlyChange={(v) => {
-            setUnassignedOnly(v);
-            if (v) setStatusFilter("unassigned");
-            else if (statusFilter === "unassigned") setStatusFilter("");
-          }}
-          staff={staff}
-          onOpenMobileFilters={() => setFiltersOpen(true)}
-        />
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_18.5rem] lg:items-start">
+        <section className="soft-panel space-y-1.5 p-1.5 sm:p-2 md:p-2.5">
+          <ScheduleToolbar
+            mode={mode}
+            onModeChange={(m) => {
+              setMode(m);
+              if (m === "day") setAnchor(parseISO(selectedDay + "T12:00:00"));
+            }}
+            anchorLabel={shiftLabel()}
+            selectedDay={selectedDay}
+            onPrev={goPrev}
+            onNext={goNext}
+            query={query}
+            onQueryChange={setQuery}
+            nurseFilter={nurseFilter}
+            onNurseFilterChange={setNurseFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={(v) => {
+              setStatusFilter(v);
+              if (v === "unassigned") setUnassignedOnly(true);
+              else if (unassignedOnly && v !== "") setUnassignedOnly(false);
+            }}
+            unassignedOnly={unassignedOnly}
+            onUnassignedOnlyChange={(v) => {
+              setUnassignedOnly(v);
+              if (v) setStatusFilter("unassigned");
+              else if (statusFilter === "unassigned") setStatusFilter("");
+            }}
+            staff={staff}
+            onOpenMobileFilters={() => setFiltersOpen(true)}
+          />
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          onDragCancel={() => setActiveDragId(null)}
-        >
-          {mode === "roster" ? (
-            <div className="mb-1.5 hidden md:block">
-              <UnassignedTray
-                bookings={filteredBookings}
-                allBookings={bookings}
-                leaves={leaves}
-                availability={availability}
-                asOf={asOf}
-                onOpen={openBooking}
-              />
-            </div>
-          ) : null}
-
-          <div className="hidden md:block">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={() => setActiveDragId(null)}
+          >
             {mode === "roster" ? (
-              <RosterView
-                staff={staff}
-                weekDays={weekDays}
-                bookings={bookings}
-                filteredBookings={filteredBookings}
-                leaves={leaves}
-                availability={availability}
-                asOf={asOf}
-                nurseFilter={nurseFilter}
-                onOpen={openBooking}
-              />
-            ) : mode === "day" ? (
-              <DayTimelineView
-                staff={staff}
-                day={selectedDay}
-                bookings={bookings}
-                filteredBookings={filteredBookings}
-                leaves={leaves}
-                availability={availability}
-                asOf={asOf}
-                nurseFilter={nurseFilter}
-                onOpen={openBooking}
-              />
-            ) : mode === "month" ? (
-              <MonthHeatmap
-                days={weekDays}
-                anchor={anchor}
-                selectedDay={selectedDay}
-                filteredBookings={filteredBookings}
-                asOf={asOf}
-                onSelectDay={(iso, date) => {
-                  setSelectedDay(iso);
-                  setAnchor(date);
-                  setMode("day");
-                }}
-              />
-            ) : (
-              <WeekColumnsView
-                weekDays={weekDays}
-                selectedDay={selectedDay}
-                filteredBookings={filteredBookings}
-                bookings={bookings}
-                leaves={leaves}
-                availability={availability}
-                staff={staff}
-                asOf={asOf}
-                onSelectDay={setSelectedDay}
-                onOpen={openBooking}
-              />
-            )}
-          </div>
-
-          <DragOverlay>
-            {activeDragBooking ? (
-              <div className="w-40 opacity-95 shadow-lg">
-                <DutyBlock
-                  booking={activeDragBooking}
-                  bookings={bookings}
+              <div className="mb-1 hidden md:block">
+                <UnassignedTray
+                  bookings={filteredBookings}
+                  allBookings={bookings}
                   leaves={leaves}
                   availability={availability}
                   asOf={asOf}
-                  draggable={false}
+                  onOpen={openBooking}
                 />
               </div>
             ) : null}
-          </DragOverlay>
-        </DndContext>
 
-        <MobileDayList
+            <div className="hidden md:block">
+              {mode === "roster" ? (
+                <RosterView
+                  staff={staff}
+                  weekDays={weekDays}
+                  bookings={bookings}
+                  filteredBookings={filteredBookings}
+                  leaves={leaves}
+                  availability={availability}
+                  asOf={asOf}
+                  nurseFilter={nurseFilter}
+                  onOpen={openBooking}
+                />
+              ) : mode === "day" ? (
+                <DayTimelineView
+                  staff={staff}
+                  day={selectedDay}
+                  bookings={bookings}
+                  filteredBookings={filteredBookings}
+                  leaves={leaves}
+                  availability={availability}
+                  asOf={asOf}
+                  nurseFilter={nurseFilter}
+                  onOpen={openBooking}
+                />
+              ) : mode === "month" ? (
+                <MonthHeatmap
+                  days={weekDays}
+                  anchor={anchor}
+                  selectedDay={selectedDay}
+                  filteredBookings={filteredBookings}
+                  asOf={asOf}
+                  onSelectDay={(iso, date) => {
+                    setSelectedDay(iso);
+                    setAnchor(date);
+                    setMode("day");
+                  }}
+                />
+              ) : (
+                <WeekColumnsView
+                  weekDays={weekDays}
+                  selectedDay={selectedDay}
+                  filteredBookings={filteredBookings}
+                  bookings={bookings}
+                  leaves={leaves}
+                  availability={availability}
+                  staff={staff}
+                  asOf={asOf}
+                  onSelectDay={setSelectedDay}
+                  onOpen={openBooking}
+                />
+              )}
+            </div>
+
+            <DragOverlay>
+              {activeDragBooking ? (
+                <div className="w-40 opacity-95 shadow-lg">
+                  <DutyBlock
+                    booking={activeDragBooking}
+                    bookings={bookings}
+                    leaves={leaves}
+                    availability={availability}
+                    asOf={asOf}
+                    draggable={false}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+
+          <MobileDayList
+            selectedDay={selectedDay}
+            dayBookings={dayBookings}
+            staff={staff}
+            onOpen={openBooking}
+            onPrev={goPrev}
+            onNext={goNext}
+            onToday={goToday}
+          />
+        </section>
+
+        <div className="hidden lg:block">
+          <ScheduleSidePanel
+            tab={sideTab}
+            onTabChange={setSideTab}
+            selectedDay={selectedDay}
+            dayBookings={dayBookings}
+            staff={staff}
+            bookings={bookings}
+            leaves={leaves}
+            availability={availability}
+            asOf={asOf}
+            pending={pending}
+            nurseFilter={nurseFilter}
+            onOpen={openBooking}
+            onMarkAvailability={markAvailability}
+          />
+        </div>
+      </div>
+
+      {/* Phone: availability only (duties already in MobileDayList) */}
+      <div className="lg:hidden">
+        <ScheduleSidePanel
+          tab="availability"
+          onTabChange={setSideTab}
           selectedDay={selectedDay}
           dayBookings={dayBookings}
           staff={staff}
+          bookings={bookings}
+          leaves={leaves}
+          availability={availability}
+          asOf={asOf}
+          pending={pending}
+          nurseFilter={nurseFilter}
           onOpen={openBooking}
+          onMarkAvailability={markAvailability}
+          compact
+          mobileAvailabilityOnly
         />
-      </section>
-
-      <ScheduleSidePanel
-        tab={sideTab}
-        onTabChange={setSideTab}
-        selectedDay={selectedDay}
-        dayBookings={dayBookings}
-        staff={staff}
-        bookings={bookings}
-        leaves={leaves}
-        availability={availability}
-        asOf={asOf}
-        pending={pending}
-        nurseFilter={nurseFilter}
-        onOpen={openBooking}
-        onMarkAvailability={markAvailability}
-      />
+      </div>
 
       <DutyDrawer
         open={drawerOpen}

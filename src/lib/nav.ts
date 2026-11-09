@@ -190,20 +190,14 @@ const familyNav: NavEntry[] = [
   },
 ];
 
-const patientNav: NavEntry[] = [
-  { href: "/dashboard/patient", label: "Overview", icon: "overview" },
-  { href: "/dashboard/patient/appointments", label: "Appointments", icon: "bookings" },
-  { href: "/dashboard/patient/care-history", label: "Care History", icon: "care" },
-  { href: "/dashboard/patient/profile", label: "Profile", icon: "profile" },
-];
-
 export const navByRole: Record<Role, NavEntry[]> = {
   super_admin: adminNav,
   admin: adminNav,
   care_coordinator: adminNav,
   nurse: nurseNav,
   family: familyNav,
-  patient: patientNav,
+  // Legacy — normalizeRole maps patient → family
+  patient: familyNav,
 };
 
 function itemAllowed(user: SessionUser, item: NavItem) {

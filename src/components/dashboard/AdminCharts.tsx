@@ -31,7 +31,7 @@ export type FunnelPoint = {
 };
 
 const axisStyle = {
-  fontSize: 12,
+  fontSize: 11,
   fill: colors.muted,
 };
 
@@ -56,16 +56,16 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
     return (
       <EmptyState
         title="No revenue yet"
-        description="Billed and collected amounts will chart once invoices move."
-        className="py-3"
+        description="Charts appear once invoices move."
+        className="py-2"
       />
     );
   }
 
   return (
-    <div className="h-64 w-full min-w-0">
+    <div className="h-44 w-full min-w-0 sm:h-52 lg:h-56">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
           <CartesianGrid stroke={gridStroke} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" tick={axisStyle} axisLine={false} tickLine={false} />
           <YAxis
@@ -73,28 +73,28 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
             axisLine={false}
             tickLine={false}
             tickFormatter={currencyTick}
-            width={44}
+            width={40}
           />
           <Tooltip
             contentStyle={tooltipStyle}
             formatter={(value) => formatCurrency(Number(value ?? 0))}
           />
-          <Legend wrapperStyle={{ fontSize: 12, color: colors.muted }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: colors.muted }} />
           <Bar
             dataKey="billed"
             name="Billed"
             fill={colors.primary}
-            radius={[6, 6, 0, 0]}
-            maxBarSize={36}
+            radius={[5, 5, 0, 0]}
+            maxBarSize={28}
           />
           <Line
             type="monotone"
             dataKey="collected"
             name="Collected"
             stroke={colors.accent}
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: colors.accent }}
-            activeDot={{ r: 5 }}
+            strokeWidth={2.25}
+            dot={{ r: 2.5, fill: colors.accent }}
+            activeDot={{ r: 4 }}
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -108,14 +108,14 @@ export function LeadFunnelChart({ data }: { data: FunnelPoint[] }) {
     return (
       <EmptyState
         title="No leads in funnel"
-        description="New enquiries will appear as a conversion funnel."
-        className="py-3"
+        description="Enquiries will chart as they arrive."
+        className="py-2"
       />
     );
   }
 
   return (
-    <div className="h-64 w-full min-w-0">
+    <div className="h-44 w-full min-w-0 sm:h-52 lg:h-56">
       <ResponsiveContainer width="100%" height="100%">
         <FunnelChart>
           <Tooltip
@@ -128,7 +128,7 @@ export function LeadFunnelChart({ data }: { data: FunnelPoint[] }) {
               fill={colors.heading}
               stroke="none"
               dataKey="name"
-              style={{ fontSize: 12, fontWeight: 600 }}
+              style={{ fontSize: 11, fontWeight: 600 }}
             />
           </Funnel>
         </FunnelChart>
@@ -145,18 +145,18 @@ export function AdminCharts({
   funnel: FunnelPoint[];
 }) {
   return (
-    <div className="grid gap-2 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="soft-panel h-full rounded-[var(--radius-xl)] p-2.5 md:p-3">
-        <div className="mb-2">
-          <h2 className="font-display text-display-md text-heading">Revenue trend</h2>
-          <p className="mt-1 text-sm text-muted">Billed vs collected over recent months</p>
+    <div className="grid gap-2 md:grid-cols-2">
+      <section className="soft-panel h-full rounded-[0.95rem] p-2 sm:p-2.5">
+        <div className="mb-1.5">
+          <h2 className="font-display text-base text-heading sm:text-lg">Revenue trend</h2>
+          <p className="text-[11px] text-muted">Billed vs collected</p>
         </div>
         <RevenueChart data={revenue} />
       </section>
-      <section className="soft-panel h-full rounded-[var(--radius-xl)] p-2.5 md:p-3">
-        <div className="mb-2">
-          <h2 className="font-display text-display-md text-heading">Lead funnel</h2>
-          <p className="mt-1 text-sm text-muted">Enquiry → contact → conversion</p>
+      <section className="soft-panel h-full rounded-[0.95rem] p-2 sm:p-2.5">
+        <div className="mb-1.5">
+          <h2 className="font-display text-base text-heading sm:text-lg">Lead funnel</h2>
+          <p className="text-[11px] text-muted">Enquiry → conversion</p>
         </div>
         <LeadFunnelChart data={funnel} />
       </section>

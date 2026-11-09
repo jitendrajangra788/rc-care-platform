@@ -30,9 +30,7 @@ export async function GET(req: Request) {
       ? `/dashboard/admin/patients/${p.id}`
       : role === "nurse"
         ? `/dashboard/nurse/patients/${p.id}`
-        : role === "patient"
-          ? `/dashboard/patient`
-          : `/dashboard/family`;
+        : `/dashboard/family`;
     catalog.push({
       id: p.id,
       type: "patient",
@@ -50,9 +48,7 @@ export async function GET(req: Request) {
       ? `/dashboard/admin/bookings?q=${encodeURIComponent(b.id)}`
       : role === "nurse"
         ? `/dashboard/nurse/duties`
-        : role === "patient"
-          ? `/dashboard/patient/appointments`
-          : `/dashboard/family`;
+        : `/dashboard/family`;
     catalog.push({
       id: b.id,
       type: "booking",

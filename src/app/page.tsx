@@ -1,11 +1,13 @@
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { HomeExperience } from "@/components/marketing/HomeExperience";
+import { getPublicBrand } from "@/lib/public-brand";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const brand = await getPublicBrand();
   return (
     <>
-      <HomeExperience />
-      <SiteFooter />
+      <HomeExperience orgName={brand.orgName} logoUrl={brand.logoUrl} />
+      <SiteFooter orgName={brand.orgName} logoUrl={brand.logoUrl} />
     </>
   );
 }

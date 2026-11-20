@@ -5,6 +5,7 @@ export function PageHero({
   subtitle,
   orgName = "Roshan Care",
   logoUrl,
+  compact = false,
 }: {
   title: string;
   subtitle: string;
@@ -12,6 +13,7 @@ export function PageHero({
   image?: string;
   orgName?: string;
   logoUrl?: string;
+  compact?: boolean;
 }) {
   return (
     <div className="relative overflow-hidden bg-[linear-gradient(145deg,#0b1f33_0%,#0d3d42_55%,#0f766e_120%)] text-white">
@@ -23,14 +25,26 @@ export function PageHero({
         <SiteHeader tone="overlay" orgName={orgName} logoUrl={logoUrl} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-7 pt-5 sm:px-5 md:px-8 md:pb-9 md:pt-7">
+      <div
+        className={
+          compact
+            ? "relative z-10 mx-auto max-w-6xl px-4 pb-4 pt-2 sm:px-5 md:px-8 md:pb-5 md:pt-3"
+            : "relative z-10 mx-auto max-w-6xl px-4 pb-7 pt-5 sm:px-5 md:px-8 md:pb-9 md:pt-7"
+        }
+      >
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--secondary-deep)] sm:text-[11px]">
           {orgName} · Bhilwara
         </p>
-        <h1 className="font-display mt-2 max-w-3xl text-[clamp(1.55rem,5vw,2.5rem)] leading-[1.1] tracking-[-0.03em] text-white">
+        <h1
+          className={
+            compact
+              ? "font-display mt-1 max-w-3xl text-[clamp(1.35rem,4vw,2rem)] leading-[1.1] tracking-[-0.03em] text-white"
+              : "font-display mt-2 max-w-3xl text-[clamp(1.55rem,5vw,2.5rem)] leading-[1.1] tracking-[-0.03em] text-white"
+          }
+        >
           {title}
         </h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/72 sm:text-[15px]">
+        <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-white/72">
           {subtitle}
         </p>
       </div>

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { STAFF_DUTY_SHIFTS } from "@/lib/schedule";
 import type { Staff } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
@@ -13,6 +14,7 @@ const emptyForm = {
   name: "",
   role: "Nurse" as Staff["role"],
   phone: "",
+  dutyShift: "Morning" as NonNullable<Staff["dutyShift"]>,
   area: "",
   skills: "",
   status: "available" as Staff["status"],
@@ -29,7 +31,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [createdCred, setCreatedCred] = useState<{ email: string; password: string } | null>(null);
+  const [createdCred, setCreatedCred] = useState<{ phone: string; password: string } | null>(null);
 
   function openCreate() {
     setEditingId(null);
@@ -45,6 +47,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
       name: s.name,
       role: s.role,
       phone: s.phone,
+      dutyShift: s.dutyShift || "Morning",
       area: s.area,
       skills: s.skills.join(", "),
       status: s.status,
@@ -81,8 +84,8 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
       return;
     }
     if (!editingId && form.password) {
-      setCreatedCred({ email: form.email, password: form.password });
-      toast.success("Staff saved successfully", "Login credentials ready below");
+      setCreatedCred({ phone: form.phone, password: form.password });
+      toast.success("Profile saved", "Staff can now log in with this mobile number");
     } else {
       setOpen(false);
       toast.success(editingId ? "Staff updated successfully" : "Staff saved successfully");
@@ -143,12 +146,15 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
             </div>
             <p className="mt-3 text-sm text-ink-soft">{s.skills.join(" · ") || "No skills listed"}</p>
             <p className="mt-2 text-sm">{s.phone}</p>
+            <p className="mt-1 text-sm font-semibold text-sea">
+              Shift: {s.dutyShift || "Not set — add before work"}
+            </p>
             <p className="mt-1 text-sm font-semibold text-ink">
               Shift pay {formatINR(s.salaryPerShift || 0)}
               {s.salaryMonthly ? ` · Monthly ${formatINR(s.salaryMonthly)}` : ""}
             </p>
             <p className="mt-1 text-sm text-sea">
-              Login: {s.email || s.loginEmail || (s.hasLogin ? "Linked" : "No login yet")}
+              Login mobile: {s.phone}
             </p>
             <div className="mt-1.5 flex gap-2">
               <button
@@ -175,7 +181,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[1.5rem] bg-white p-3 shadow-xl">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-display text-2xl">
-                {editingId ? "Edit staff" : "Add staff + login"}
+                {editingId ? "Edit staff profile" : "Add staff profile"}
               </h2>
               <button type="button" onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-paper-2">
                 <X className="h-5 w-5" />
@@ -187,7 +193,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
                 <p className="font-semibold text-mint">Staff created</p>
                 <p className="text-sm">Share these login details with the staff member:</p>
                 <p className="text-sm">
-                  <strong>Email:</strong> {createdCred.email}
+                  <strong>Mobile:</strong> {createdCred.phone}
                 </p>
                 <p className="text-sm">
                   <strong>Password:</strong> {createdCred.password}
@@ -233,11 +239,32 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
                 </div>
                 <input
                   className="field"
-                  placeholder="Phone *"
+                  placeholder="Mobile number *"
+                  inputMode="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   required
                 />
+                <select
+                  className="field"
+                  value={form.dutyShift}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      dutyShift: e.target.value as NonNullable<Staff["dutyShift"]>,
+                    })
+                  }
+                  required
+                >
+                  {STAFF_DUTY_SHIFTS.map((shift) => (
+                    <option key={shift} value={shift}>
+                      {shift} shift
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-ink-soft">
+                  Save the profile first. Staff can work only after this, and only on this shift.
+                </p>
                 <input
                   className="field"
                   placeholder="Area (e.g. Subhash Nagar)"
@@ -275,10 +302,9 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
                 <input
                   className="field"
                   type="email"
-                  placeholder="Login email / username *"
+                  placeholder="Email (optional — login is the mobile number)"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  required
                 />
                 <input
                   className="field"
@@ -294,7 +320,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
                   disabled={saving}
                   className="w-full rounded-full bg-sea px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  {saving ? "Saving..." : editingId ? "Update staff" : "Create staff + login"}
+                  {saving ? "Saving..." : editingId ? "Update profile" : "Save profile"}
                 </button>
               </form>
             )}

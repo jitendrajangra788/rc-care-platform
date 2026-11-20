@@ -5,16 +5,10 @@ import { pushAudit } from "@/lib/audit";
 import { readDb, writeDb } from "@/lib/db";
 import { hashPassword, isHashedPassword, verifyPassword } from "@/lib/password";
 import { normalizeRole } from "@/lib/permissions";
+import { phonesMatch } from "@/lib/phone";
 import { signSession } from "@/lib/session-token";
 
 const attempts = new Map<string, { count: number; resetAt: number }>();
-
-function phonesMatch(input: string, phone?: string) {
-  const a = input.replace(/\D/g, "");
-  const b = String(phone || "").replace(/\D/g, "");
-  if (a.length < 10 || b.length < 10) return false;
-  return a.slice(-10) === b.slice(-10);
-}
 
 function rateLimit(key: string) {
   const now = Date.now();
@@ -49,18 +43,46 @@ export async function POST(req: Request) {
     }
 
     const db = await readDb();
-    const user = db.users.find((u) => {
-      if (u.email.toLowerCase() === email) return true;
-      if (email.includes("@")) return false;
-      return phonesMatch(rawId, u.phone);
-    });
+    const byEmail = rawId.includes("@")
+      ? db.users.find((u) => u.email.toLowerCase() === email)
+      : undefined;
+    const byPhone = rawId.includes("@")
+      ? undefined
+      : db.users.find((u) => phonesMatch(rawId, u.phone)) ||
+        (() => {
+          const staff = db.staff.find((s) => phonesMatch(rawId, s.phone));
+          return staff?.userId ? db.users.find((u) => u.id === staff.userId) : undefined;
+        })();
+    const user = byEmail || byPhone;
     if (!user || user.active === false || !verifyPassword(password, user.password)) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    const role = normalizeRole(user.role);
+    if (role === "nurse") {
+      if (rawId.includes("@")) {
+        return NextResponse.json(
+          { error: "Staff login is with the mobile number on your profile." },
+          { status: 401 },
+        );
+      }
+      const staff = db.staff.find((s) => s.userId === user.id || phonesMatch(rawId, s.phone));
+      if (!staff) {
+        return NextResponse.json(
+          { error: "Staff profile must be added first. Work starts after the profile is saved." },
+          { status: 403 },
+        );
+      }
+      if (!phonesMatch(rawId, staff.phone)) {
+        return NextResponse.json(
+          { error: "Use the mobile number saved on your staff profile." },
+          { status: 401 },
+        );
+      }
+    }
+
     attempts.delete(rateKey);
 
-    const role = normalizeRole(user.role);
     const idx = db.users.findIndex((u) => u.id === user.id);
     if (idx >= 0) {
       const next = { ...db.users[idx], active: true as const };

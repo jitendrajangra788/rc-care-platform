@@ -92,9 +92,9 @@ export function ScheduleWorkspace({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sideTab, setSideTab] = useState<SidePanelTab>("duties");
   const [assignStaffId, setAssignStaffId] = useState("");
-  const [shiftKind, setShiftKind] = useState<Booking["shift"]>("12hr");
-  const [shiftStart, setShiftStart] = useState("08:00");
-  const [shiftEnd, setShiftEnd] = useState("20:00");
+  const [shiftKind, setShiftKind] = useState<Booking["shift"]>("Morning");
+  const [shiftStart, setShiftStart] = useState("07:00");
+  const [shiftEnd, setShiftEnd] = useState("13:00");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmUnassign, setConfirmUnassign] = useState(false);

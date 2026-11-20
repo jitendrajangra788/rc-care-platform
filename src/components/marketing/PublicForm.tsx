@@ -1,17 +1,22 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function FormSection({
   title,
   children,
+  cols = 2,
 }: {
   title: string;
   children: React.ReactNode;
+  cols?: 2 | 3;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--line)] bg-white p-4 sm:p-5">
-      <h2 className="text-sm font-semibold text-[#172D3A]">{title}</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">{children}</div>
+    <section className="rounded-xl border border-[var(--line)] bg-white px-3 py-3 sm:px-3.5">
+      <h2 className="text-[13px] font-semibold text-[#172D3A]">{title}</h2>
+      <div className={cn("mt-2.5 grid gap-2.5", cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+        {children}
+      </div>
     </section>
   );
 }

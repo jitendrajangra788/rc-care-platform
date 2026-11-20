@@ -17,8 +17,15 @@ export function distanceMeters(
 
 /** Old Roshan_HCMS used a fixed 500m care-site radius */
 export const DEFAULT_GEOFENCE_M = 500;
-/** Reject when horizontal accuracy worse than this (meters), unless demo mode */
-export const WEAK_GPS_M = 120;
+/**
+ * Indoor phones in the field are often ±80–250m. Worse than this is "weak"
+ * but can still be on site. City-level network fixes are rejected separately.
+ */
+export const WEAK_GPS_M = 250;
+/** Above this, the fix is a cell/IP location, not a usable care-site GPS. */
+export const UNUSABLE_GPS_M = 1000;
+/** How far a real GPS error may widen the fence. Never the full city-level accuracy. */
+export const MAX_ACCURACY_BUFFER_M = 250;
 /** Impossible travel threshold */
 export const JUMP_DISTANCE_M = 40000;
 export const JUMP_WINDOW_MS = 15 * 60 * 1000;
@@ -30,11 +37,20 @@ export function gpsQuality(accuracy?: number): "good" | "ok" | "weak" | "unknown
   return "weak";
 }
 
-/** Smart geofence: configured radius + small accuracy buffer (capped). */
+/** True when the fix is precise enough to prove someone is at the care site. */
+export function isUsableGps(accuracy?: number) {
+  if (accuracy == null || Number.isNaN(accuracy)) return false;
+  return accuracy > 0 && accuracy <= UNUSABLE_GPS_M;
+}
+
+/**
+ * Care-site fence plus the phone's own error, capped.
+ * A ±5 km network fix must not widen the fence to the whole city.
+ */
 export function effectiveGeofenceM(configured?: number, accuracy?: number) {
-  const base = configured || DEFAULT_GEOFENCE_M;
-  if (accuracy == null) return base;
-  const buffer = Math.min(Math.max(accuracy * 0.75, 0), 80);
+  const base = configured && configured > 0 ? configured : DEFAULT_GEOFENCE_M;
+  if (!isUsableGps(accuracy) || accuracy == null) return base;
+  const buffer = Math.min(accuracy, MAX_ACCURACY_BUFFER_M);
   return Math.round(base + buffer);
 }
 

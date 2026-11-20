@@ -102,19 +102,20 @@ export function CareerApplyForm() {
   return (
     <>
       <PageHero
+        compact
         title="Apply to join Roshan Care"
         subtitle="Nurses and caregivers can share their qualification, experience, and documents. Submitting this form does not create a staff login."
       />
-      <Section className="bg-[#F7FAF9]">
+      <Section className="bg-[#F7FAF9] !px-4 !py-4 md:!px-6 md:!py-5">
         {reference ? (
           <ReferencePanel title="Job application received" reference={reference}>
             <p>Keep this reference number. The hiring desk will review your documents and contact you if you are shortlisted.</p>
             <p>A staff account is created only after verification and selection.</p>
           </ReferencePanel>
         ) : (
-          <form onSubmit={onSubmit} className="relative mx-auto max-w-3xl space-y-4">
+          <form onSubmit={onSubmit} className="relative mx-auto max-w-3xl space-y-2.5">
             <Honeypot />
-            <FormSection title="1. Personal details">
+            <FormSection title="1. Personal details" cols={3}>
               <FormField label="Full name *">
                 <Input name="fullName" required autoComplete="name" />
               </FormField>
@@ -138,7 +139,7 @@ export function CareerApplyForm() {
 
             <FormSection title="2. Address">
               <FormField label="Full address *" className="sm:col-span-2">
-                <Textarea name="address" required rows={3} />
+                <Textarea name="address" required rows={2} className="min-h-16" />
               </FormField>
               <FormField label="City *">
                 <Input name="city" required defaultValue="Bhilwara" />
@@ -282,7 +283,7 @@ export function CareerApplyForm() {
 
             <FormSection title="9. Additional information">
               <FormField label="About yourself" className="sm:col-span-2">
-                <Textarea name="about" rows={4} placeholder="A short note about your work" />
+                <Textarea name="about" rows={2} className="min-h-16" placeholder="A short note about your work" />
               </FormField>
               <FormField label="Reference contact" className="sm:col-span-2">
                 <Input name="referenceContact" placeholder="Name and mobile of a reference" />

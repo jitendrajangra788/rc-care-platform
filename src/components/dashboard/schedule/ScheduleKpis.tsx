@@ -114,22 +114,22 @@ export function ScheduleKpis({
       <div className="flex flex-wrap gap-1.5">
         {(
           [
-            ["8hr", byShift["8hr"]],
-            ["12hr", byShift["12hr"]],
-            ["24hr", byShift["24hr"]],
+            ["Morning", byShift["Morning"]],
+            ["Night", byShift["Night"]],
+            ["Visit", byShift["Visit"]],
           ] as const
         ).map(([label, count]) => (
           <span
             key={label}
             className={cn(
               "inline-flex items-center gap-1 rounded-full border border-[var(--line)] px-2 py-0.5 text-[11px] font-semibold",
-              label === "8hr" &&
+              label === "Morning" &&
                 "bg-[var(--warning-soft)] text-[color-mix(in_srgb,var(--warning)_90%,var(--heading))]",
-              label === "12hr" && "bg-[var(--info-soft)] text-[var(--info)]",
-              label === "24hr" && "bg-[var(--primary-soft)] text-primary",
+              label === "Night" && "bg-[var(--info-soft)] text-[var(--info)]",
+              label === "Visit" && "bg-[var(--primary-soft)] text-primary",
             )}
           >
-            {label.replace("hr", "h")}
+            {label}
             <span className="tabular-nums text-heading">{count}</span>
           </span>
         ))}

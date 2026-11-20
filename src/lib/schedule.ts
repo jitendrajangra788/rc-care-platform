@@ -13,12 +13,36 @@ import {
 } from "date-fns";
 import type { Booking, BookingStatus, LeaveRequest, NurseAvailability, Staff } from "./types";
 
+/** Profile must exist, with a phone and one of the three shifts, before a duty is assigned. */
+export function staffWorkBlock(staff: Staff | undefined, shift: Booking["shift"]) {
+  if (!staff) return "Add the staff profile first. Work starts only after the profile is saved.";
+  const digits = staff.phone.replace(/\D/g, "");
+  if (digits.length < 10) return "Save a mobile number on the staff profile before assigning work.";
+  if (!staff.dutyShift) {
+    return "Set this staff member to Morning, Night, or Visit before they can work.";
+  }
+  if (isStaffDutyShift(shift) && staff.dutyShift !== shift) {
+    return `${staff.name} can only work the ${staff.dutyShift} shift.`;
+  }
+  return null;
+}
+
 export type ShiftKind = Booking["shift"];
+
+export const STAFF_DUTY_SHIFTS = ["Morning", "Night", "Visit"] as const;
+export type StaffDutyShift = (typeof STAFF_DUTY_SHIFTS)[number];
+
+export function isStaffDutyShift(value: string): value is StaffDutyShift {
+  return (STAFF_DUTY_SHIFTS as readonly string[]).includes(value);
+}
 
 export const SHIFT_PRESETS: Record<
   ShiftKind,
   { label: string; hours: number; start: string; end: string; crossesMidnight: boolean }
 > = {
+  Morning: { label: "Morning", hours: 6, start: "07:00", end: "13:00", crossesMidnight: false },
+  Night: { label: "Night", hours: 12, start: "19:00", end: "07:00", crossesMidnight: true },
+  Visit: { label: "Visit", hours: 2, start: "10:00", end: "12:00", crossesMidnight: false },
   "8hr": { label: "8 Hours", hours: 8, start: "08:00", end: "16:00", crossesMidnight: false },
   "12hr": { label: "12 Hours", hours: 12, start: "08:00", end: "20:00", crossesMidnight: false },
   "24hr": { label: "24 Hours", hours: 24, start: "08:00", end: "08:00", crossesMidnight: true },
@@ -84,6 +108,16 @@ export function validateShiftTimes(
   let duration = endMin - startMin;
   if (duration <= 0) duration += 24 * 60; // crosses midnight
   const hours = duration / 60;
+  if (shift === "Visit") {
+    if (hours < 0.5 || hours > 4) return "A visit should be between 30 minutes and 4 hours.";
+    return null;
+  }
+  if (shift === "Morning" && (hours < 4 || hours > 8)) {
+    return "Morning shift should be about 4–8 hours.";
+  }
+  if (shift === "Night" && (hours < 8 || hours > 14)) {
+    return "Night shift should be about 8–14 hours.";
+  }
   if (hours < 4 || hours > 26) return "Shift duration must be between 4 and 26 hours.";
   if (shift === "8hr" && (hours < 6 || hours > 10)) {
     return "8-hour shift duration should be about 6–10 hours.";
@@ -268,7 +302,14 @@ export function dailyWorkload(
   );
   const assigned = dayBookings.filter((b) => b.assignedStaffId);
   const unassigned = dayBookings.filter((b) => !b.assignedStaffId && b.status !== "completed");
-  const byShift = { "8hr": 0, "12hr": 0, "24hr": 0 } as Record<ShiftKind, number>;
+  const byShift = {
+    Morning: 0,
+    Night: 0,
+    Visit: 0,
+    "8hr": 0,
+    "12hr": 0,
+    "24hr": 0,
+  } as Record<ShiftKind, number>;
   for (const b of dayBookings) byShift[b.shift] = (byShift[b.shift] || 0) + 1;
   return {
     total: dayBookings.length,

@@ -20,13 +20,15 @@ import {
   CircleDot,
 } from "lucide-react";
 import type { Attendance, AttendanceSlot, Booking } from "@/lib/types";
-import { dutyProgress, todayDutyDate } from "@/lib/duty";
+import { dutyProgress, isSingleShift, normalizeSlot, todayDutyDate } from "@/lib/duty";
 import {
   DEFAULT_GEOFENCE_M,
+  UNUSABLE_GPS_M,
   WEAK_GPS_M,
   distanceMeters,
   effectiveGeofenceM,
   gpsQuality,
+  isUsableGps,
 } from "@/lib/geo";
 import { cn, formatINR } from "@/lib/utils";
 import { formatDateTime } from "@/lib/format";
@@ -56,7 +58,21 @@ type QueuedPresent = {
   queuedAt: string;
 };
 
-type HistoryFilter = "all" | "morning" | "evening" | "week" | "month";
+type HistoryFilter = "all" | "morning" | "night" | "visit" | "week" | "month";
+type MarkKind = "morning" | "night" | "visit";
+
+function markKind(
+  type: Attendance["type"],
+  shift?: Booking["shift"],
+): MarkKind {
+  if (shift === "Night") return "night";
+  if (shift === "Visit") return "visit";
+  if (shift === "Morning") return "morning";
+  const slot = normalizeSlot(type);
+  if (slot === "night" || slot === "evening") return "night";
+  if (slot === "visit") return "visit";
+  return "morning";
+}
 
 function formatDistance(meters: number) {
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
@@ -65,8 +81,7 @@ function formatDistance(meters: number) {
 
 function formatAccuracy(accuracy?: number) {
   if (accuracy == null) return "—";
-  if (accuracy >= 5000) return "Weak GPS";
-  if (accuracy >= 1000) return `±${Math.round(accuracy / 1000)} km`;
+  if (accuracy > UNUSABLE_GPS_M) return `Network ±${Math.round(accuracy)} m`;
   return `±${Math.round(accuracy)} m`;
 }
 
@@ -91,12 +106,6 @@ function qualityPct(accuracy?: number) {
   if (accuracy <= 50) return 80;
   if (accuracy <= WEAK_GPS_M) return 55;
   return 25;
-}
-
-function slotLabel(type: Attendance["type"]) {
-  if (type === "present") return "morning";
-  if (type === "checkout") return "evening";
-  return type;
 }
 
 export function AttendancePanel({
@@ -128,11 +137,12 @@ export function AttendancePanel({
     lng: number;
   } | null>(null);
   const photoCaptureRef = useRef<PhotoCaptureHandle>(null);
+  const gpsWatchRef = useRef(0);
 
   const selected = duties.find((d) => d.id === bookingId);
   const progress = useMemo(
-    () => dutyProgress(history, bookingId, dutyDate),
-    [history, bookingId, dutyDate],
+    () => dutyProgress(history, bookingId, dutyDate, selected?.shift),
+    [history, bookingId, dutyDate, selected?.shift],
   );
   const nextSlot: AttendanceSlot | null = progress.nextSlot;
   const shiftPay = selected?.staffPayPerShift ?? salaryPerShift;
@@ -149,9 +159,11 @@ export function AttendancePanel({
     gps && siteLat != null && siteLng != null
       ? Math.round(distanceMeters(gps.lat, gps.lng, siteLat, siteLng))
       : null;
-  const within = distance != null ? distance <= radius : null;
-  const farAway = distance != null && distance > radius;
-  const weakGps = quality === "weak";
+  const usableGps = gps ? isUsableGps(gps.accuracy) : false;
+  const within = usableGps && distance != null ? distance <= radius : null;
+  const farAway = usableGps && distance != null && distance > radius;
+  const cityMismatch = distance != null && distance > 20_000;
+  const weakGps = Boolean(gps && usableGps && quality === "weak");
 
   const step = progress.complete
     ? 4
@@ -171,9 +183,13 @@ export function AttendancePanel({
       ? "Enter the 4–6 digit care site PIN."
       : !photoDataUrl
         ? `Capture the ${nextSlot === "evening" ? "evening" : "morning"} attendance photo.`
-        : weakGps && !demoForce
-          ? "GPS is weak — refresh outdoors or enable remote/demo check-in."
-          : null;
+        : gps && !usableGps && !demoForce
+          ? "GPS accurate nahi hai. Phone me Location → High accuracy on karke Refresh GPS dabayein."
+          : farAway && !demoForce
+            ? cityMismatch
+              ? "Aapka GPS aur care site alag shehar me hain. Site par khade hokar High accuracy GPS se dubara try karo."
+              : "Aap care site ke fence se bahar ho. Thoda site ke paas aakar Refresh GPS karo."
+            : null;
 
   function reasonForAction(action: "morning" | "evening" | "complete"): string | null {
     if (progress.complete) return "Duty already complete for today.";
@@ -220,16 +236,17 @@ export function AttendancePanel({
     weekAgo.setDate(weekAgo.getDate() - 7);
     const monthKey = dutyDate.slice(0, 7);
     return history.filter((a) => {
-      const slot = slotLabel(a.type);
-      if (historyFilter === "morning") return slot === "morning";
-      if (historyFilter === "evening") return slot === "evening";
+      const kind = markKind(a.type, duties.find((d) => d.id === a.bookingId)?.shift);
+      if (historyFilter === "morning" || historyFilter === "night" || historyFilter === "visit") {
+        return kind === historyFilter;
+      }
       if (historyFilter === "week") return new Date(a.createdAt) >= weekAgo;
       if (historyFilter === "month") {
         return (a.dutyDate || a.createdAt.slice(0, 10)).startsWith(monthKey);
       }
       return true;
     });
-  }, [history, historyFilter, dutyDate]);
+  }, [history, historyFilter, dutyDate, duties]);
 
   const {
     page: histPage,
@@ -246,24 +263,67 @@ export function AttendancePanel({
     setGpsLoading(true);
     if (!navigator.geolocation) {
       setGpsLoading(false);
-      setGpsError("GPS not supported on this device/browser.");
+      setGps(null);
+      setGpsError("Is browser me GPS nahi hai.");
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGps({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        });
-        setGpsLoading(false);
-      },
-      (err) => {
-        setGpsLoading(false);
-        setGpsError(err.message || "Unable to get GPS location");
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
-    );
+
+    let settled = false;
+    let best: GeolocationPosition | null = null;
+    let timer = 0;
+    if (gpsWatchRef.current) navigator.geolocation.clearWatch(gpsWatchRef.current);
+
+    const stop = () => {
+      if (gpsWatchRef.current) navigator.geolocation.clearWatch(gpsWatchRef.current);
+      gpsWatchRef.current = 0;
+      if (timer) window.clearTimeout(timer);
+    };
+
+    const finish = (pos: GeolocationPosition | null, err?: GeolocationPositionError) => {
+      if (settled) return;
+      settled = true;
+      stop();
+      setGpsLoading(false);
+      if (!pos || !isUsableGps(pos.coords.accuracy)) {
+        setGps(null);
+        if (err?.code === 1) {
+          setGpsError(
+            "Location permission band hai. Browser me location Allow karo, phir Refresh GPS dabayein.",
+          );
+        } else if (err?.code === 2) {
+          setGpsError("Phone ki location band hai. Settings me Location on karke dubara try karo.");
+        } else if (pos && pos.coords.accuracy > UNUSABLE_GPS_M) {
+          const km = Math.max(1, Math.round(pos.coords.accuracy / 1000));
+          setGpsError(
+            `Exact GPS nahi mila. Browser ne sirf network location di (±${km} km) — isse site par hone ka proof nahi banta. Phone par Location → High accuracy on karke Refresh GPS karo.`,
+          );
+        } else if (err?.code === 3) {
+          setGpsError("GPS time out. Khuli jagah me khade hokar Refresh GPS dubara dabayein.");
+        } else {
+          setGpsError("Exact GPS nahi mila. Phone par Location High accuracy on karke dubara try karo.");
+        }
+        return;
+      }
+      setGps({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+      });
+    };
+
+    const consider = (pos: GeolocationPosition) => {
+      if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+      if (pos.coords.accuracy <= 40) finish(pos);
+    };
+
+    gpsWatchRef.current = navigator.geolocation.watchPosition(consider, (err) => {
+      if (err.code === 1) finish(null, err);
+    }, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 25_000,
+    });
+    timer = window.setTimeout(() => finish(best), 18_000);
   }
 
   async function flushQueue() {
@@ -298,19 +358,18 @@ export function AttendancePanel({
       void refreshGps();
       setQueueCount(readQueue().length);
     }, 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      window.clearTimeout(id);
+      if (gpsWatchRef.current && navigator.geolocation) {
+        navigator.geolocation.clearWatch(gpsWatchRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
     const id = window.setTimeout(() => setSitePin(""), 0);
     return () => window.clearTimeout(id);
   }, [bookingId]);
-
-  useEffect(() => {
-    if (!(farAway && !demoForce && !siteOverride)) return;
-    const id = window.setTimeout(() => setDemoForce(true), 0);
-    return () => window.clearTimeout(id);
-  }, [farAway, demoForce, siteOverride]);
 
   useEffect(() => {
     function onOnline() {
@@ -354,17 +413,25 @@ export function AttendancePanel({
       toast.info("Duty already complete", "Aaj morning + evening dono ho chuke hain");
       return;
     }
-    if (weakGps && !demoForce && !opts?.forceDemo) {
+    if (!demoForce && !opts?.forceDemo && !isUsableGps(gps.accuracy)) {
       toast.error(
-        "Weak GPS",
-        `Accuracy ±${Math.round(gps.accuracy || 0)}m — Refresh GPS ya demo on karo`,
+        "GPS accurate nahi",
+        "Phone me Location High accuracy on karke Refresh GPS karo. Network location se present nahi lagega.",
+      );
+      return;
+    }
+    if (!demoForce && !opts?.forceDemo && !opts?.pinCareSite && within === false) {
+      toast.error(
+        "Site ke bahar",
+        distance != null
+          ? `Aap ${formatDistance(distance)} door ho. Site par khade hokar Refresh GPS karo.`
+          : "Care site GPS set nahi hai.",
       );
       return;
     }
 
     const pinCareSite = opts?.pinCareSite === true;
-    const useDemo =
-      !pinCareSite && (opts?.forceDemo === true || demoForce || within === false);
+    const useDemo = !pinCareSite && (opts?.forceDemo === true || demoForce);
 
     const payload: QueuedPresent = {
       bookingId,
@@ -449,11 +516,11 @@ export function AttendancePanel({
   const gpsTone =
     !gps
       ? "neutral"
-      : weakGps
+      : !usableGps && !demoForce
         ? "danger"
         : within === false && !demoForce
           ? "danger"
-          : quality === "ok"
+          : weakGps || quality === "ok"
             ? "warning"
             : "success";
 
@@ -496,7 +563,7 @@ export function AttendancePanel({
           />
           <SlotMetric
             icon={<Moon className="h-4 w-4" />}
-            title="Evening"
+            title="Night"
             status={
               progress.eveningDone
                 ? "Completed"
@@ -510,7 +577,7 @@ export function AttendancePanel({
           <SlotMetric
             icon={<Wallet className="h-4 w-4" />}
             title="Salary"
-            status={progress.complete ? formatINR(shiftPay) : "After evening"}
+            status={progress.complete ? formatINR(shiftPay) : "After check-in"}
             done={progress.complete}
             active={false}
           />
@@ -572,7 +639,7 @@ export function AttendancePanel({
             <div className="grid gap-2 sm:grid-cols-2">
               {duties.map((d) => {
                 const active = d.id === bookingId;
-                const p = dutyProgress(history, d.id, dutyDate);
+                const p = dutyProgress(history, d.id, dutyDate, d.shift);
                 return (
                   <button
                     key={d.id}
@@ -591,8 +658,14 @@ export function AttendancePanel({
                         <p className="mt-1 line-clamp-2 text-sm text-muted">{d.address}</p>
                         <p className="mt-1 text-xs font-medium text-muted">{d.id}</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          <MiniBadge ok={p.morningDone} label="Morning" />
-                          <MiniBadge ok={p.eveningDone} label="Evening" />
+                          {isSingleShift(d.shift) ? (
+                            <MiniBadge ok={p.complete} label={d.shift} />
+                          ) : (
+                            <>
+                              <MiniBadge ok={p.morningDone} label="Morning" />
+                              <MiniBadge ok={p.eveningDone} label="Night" />
+                            </>
+                          )}
                           {d.sitePin ? (
                             <span className="rounded-full bg-paper-2 px-2 py-0.5 text-[10px] font-semibold text-muted">
                               PIN
@@ -660,6 +733,14 @@ export function AttendancePanel({
                     label="Distance from site"
                     value={distance != null ? formatDistance(distance) : "—"}
                   />
+                  <InfoChip
+                    label="Site GPS"
+                    value={
+                      siteLat != null && siteLng != null
+                        ? `${siteLat.toFixed(5)}, ${siteLng.toFixed(5)}`
+                        : "Not set"
+                    }
+                  />
                   <InfoChip label="Geofence radius" value={`${radius} m`} />
                 </div>
 
@@ -685,11 +766,16 @@ export function AttendancePanel({
                   </div>
                 ) : null}
 
-                {gpsError ? <p className="mt-3 text-sm text-danger">{gpsError}</p> : null}
-                {weakGps && !demoForce ? (
+                {cityMismatch && usableGps ? (
+                  <p className="mt-3 rounded-[var(--radius-lg)] bg-[var(--danger-soft)] px-3 py-2.5 text-sm text-danger">
+                    Aap aur care site {formatDistance(distance!)} door ho. Site ka saved GPS galat ho
+                    sakta hai — care desk se location dubara set karvao.
+                  </p>
+                ) : null}
+                {weakGps && within ? (
                   <p className="mt-3 rounded-[var(--radius-lg)] bg-[var(--warning-soft)] px-3 py-2.5 text-sm text-[var(--warning)]">
-                    Weak GPS (±{Math.round(gps?.accuracy || 0)}m). Move outdoors and refresh, or
-                    enable remote/demo check-in.
+                    GPS thoda weak hai (±{Math.round(gps?.accuracy || 0)}m), lekin aap site ke fence
+                    ke andar ho. Present mark ho sakta hai.
                   </p>
                 ) : null}
 
@@ -703,12 +789,14 @@ export function AttendancePanel({
                   )}
                 >
                   {!gps
-                    ? "Waiting for GPS"
-                    : demoForce
-                      ? `Remote check-in ready · ${distance != null ? formatDistance(distance) : "—"} away`
-                      : within
-                        ? `Verified · inside geofence · ${formatDistance(distance!)} (≤${radius}m)`
-                        : `Outside allowed radius · ${formatDistance(distance!)} away`}
+                    ? gpsError || (gpsLoading ? "GPS lock ho raha hai…" : "Waiting for GPS")
+                    : !usableGps && !demoForce
+                      ? gpsError || "Exact GPS nahi mila — High accuracy on karke Refresh GPS karo"
+                      : demoForce
+                        ? `Remote check-in on · ${distance != null ? formatDistance(distance) : "—"} away`
+                        : within
+                          ? `Verified · aap site par ho · ${formatDistance(distance!)} (fence ${radius}m)`
+                          : `Site se bahar · ${formatDistance(distance!)} door`}
                 </div>
               </section>
 
@@ -837,45 +925,62 @@ export function AttendancePanel({
                   </button>
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-2">
+                {isSingleShift(selected?.shift) ? (
                   <button
                     type="button"
-                    onClick={() => submitSlot("morning")}
-                    disabled={!canMarkMorning}
-                    title={morningReason || undefined}
-                    className={cn(
-                      "btn w-full justify-center !py-3 disabled:cursor-not-allowed disabled:opacity-50",
-                      nextSlot === "morning" ? "btn-primary" : "btn-outline",
-                    )}
+                    onClick={() => nextSlot && submitSlot(nextSlot)}
+                    disabled={!nextSlot || Boolean(requirementsReason) || saving}
+                    className="btn btn-primary w-full justify-center !py-3 text-base disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Sun className="h-4 w-4" />
-                    {saving && nextSlot === "morning" ? "Saving…" : "Mark morning present"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => submitSlot("evening")}
-                    disabled={!canMarkEvening}
-                    title={eveningReason || undefined}
-                    className={cn(
-                      "btn w-full justify-center !py-3 disabled:cursor-not-allowed disabled:opacity-50",
-                      nextSlot === "evening" ? "btn-primary" : "btn-outline",
+                    {selected?.shift === "Night" ? (
+                      <Moon className="h-4 w-4" />
+                    ) : (
+                      <Sun className="h-4 w-4" />
                     )}
-                  >
-                    <Moon className="h-4 w-4" />
-                    {saving && nextSlot === "evening" ? "Saving…" : "Mark evening present"}
+                    {saving ? "Saving…" : `Mark ${selected?.shift} present`}
                   </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => submitSlot("evening")}
-                  disabled={!canCompleteDuty}
-                  title={completeReason || undefined}
-                  className="btn btn-primary w-full justify-center !py-3 text-base disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Flag className="h-4 w-4" />
-                  {saving && nextSlot === "evening" ? "Saving…" : "Complete duty"}
-                </button>
+                ) : (
+                  <>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() => submitSlot("morning")}
+                        disabled={!canMarkMorning}
+                        title={morningReason || undefined}
+                        className={cn(
+                          "btn w-full justify-center !py-3 disabled:cursor-not-allowed disabled:opacity-50",
+                          nextSlot === "morning" ? "btn-primary" : "btn-outline",
+                        )}
+                      >
+                        <Sun className="h-4 w-4" />
+                        {saving && nextSlot === "morning" ? "Saving…" : "Mark morning present"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => submitSlot("evening")}
+                        disabled={!canMarkEvening}
+                        title={eveningReason || undefined}
+                        className={cn(
+                          "btn w-full justify-center !py-3 disabled:cursor-not-allowed disabled:opacity-50",
+                          nextSlot === "evening" ? "btn-primary" : "btn-outline",
+                        )}
+                      >
+                        <Moon className="h-4 w-4" />
+                        {saving && nextSlot === "evening" ? "Saving…" : "Mark night present"}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => submitSlot("evening")}
+                      disabled={!canCompleteDuty}
+                      title={completeReason || undefined}
+                      className="btn btn-primary w-full justify-center !py-3 text-base disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Flag className="h-4 w-4" />
+                      {saving && nextSlot === "evening" ? "Saving…" : "Complete duty"}
+                    </button>
+                  </>
+                )}
 
                 {actionHint ? (
                   <p className="rounded-[var(--radius-lg)] bg-paper-2 px-3 py-2 text-sm text-muted">
@@ -915,7 +1020,7 @@ export function AttendancePanel({
               <h3 className="font-display mt-1 text-xl text-heading md:text-2xl">
                 Attendance history
               </h3>
-              <p className="mt-0.5 text-sm text-muted">Morning and evening check-ins</p>
+              <p className="mt-0.5 text-sm text-muted">Morning, night, and visit check-ins</p>
             </div>
             <Badge tone="neutral">{filteredHistory.length}</Badge>
           </div>
@@ -925,7 +1030,8 @@ export function AttendancePanel({
               [
                 ["all", "All"],
                 ["morning", "Morning"],
-                ["evening", "Evening"],
+                ["night", "Night"],
+                ["visit", "Visit"],
                 ["week", "This week"],
                 ["month", "This month"],
               ] as const
@@ -957,7 +1063,8 @@ export function AttendancePanel({
             ) : (
               <>
               {histRows.map((a) => {
-                const slot = slotLabel(a.type);
+                const kind = markKind(a.type, duties.find((d) => d.id === a.bookingId)?.shift);
+                const kindLabel = kind === "night" ? "Night" : kind === "visit" ? "Visit" : "Morning";
                 return (
                   <article
                     key={a.id}
@@ -981,17 +1088,19 @@ export function AttendancePanel({
                           <span
                             className={cn(
                               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
-                              slot === "morning"
+                              kind === "morning"
                                 ? "bg-[var(--primary-soft)] text-primary"
-                                : "bg-[var(--success-soft)] text-success",
+                                : kind === "visit"
+                                  ? "bg-[var(--warning-soft)] text-[var(--warning)]"
+                                  : "bg-[var(--success-soft)] text-success",
                             )}
                           >
-                            {slot === "morning" ? (
-                              <Sun className="h-3 w-3" />
-                            ) : (
+                            {kind === "night" ? (
                               <Moon className="h-3 w-3" />
+                            ) : (
+                              <Sun className="h-3 w-3" />
                             )}
-                            {slot}
+                            {kindLabel}
                           </span>
                           {a.punctualityStatus ? (
                             <Badge

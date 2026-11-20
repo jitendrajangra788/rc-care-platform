@@ -180,6 +180,7 @@ export function DutyDrawer({
                 {staff.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
+                    {s.dutyShift ? ` · ${s.dutyShift}` : " · shift not set"}
                     {s.id === booking.backupStaffId ? " · backup" : ""}
                   </option>
                 ))}
@@ -198,9 +199,12 @@ export function DutyDrawer({
                     setShiftEnd(SHIFT_PRESETS[v].end);
                   }}
                 >
-                  <option value="8hr">8 Hours</option>
-                  <option value="12hr">12 Hours</option>
-                  <option value="24hr">24 Hours</option>
+                  <option value="Morning">Morning</option>
+                  <option value="Night">Night</option>
+                  <option value="Visit">Visit</option>
+                  {shiftKind === "8hr" || shiftKind === "12hr" || shiftKind === "24hr" ? (
+                    <option value={shiftKind}>{shiftKind} (existing)</option>
+                  ) : null}
                 </select>
               </label>
               <label className="text-sm">

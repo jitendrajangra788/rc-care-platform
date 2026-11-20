@@ -6,6 +6,7 @@ import { readDb, writeDb } from "@/lib/db";
 import {
   defaultShiftTimes,
   findAssignmentConflicts,
+  staffWorkBlock,
   validateBookingDates,
   validateShiftTimes,
 } from "@/lib/schedule";
@@ -175,7 +176,8 @@ function syncAllotmentStaff(
 
 function defaultRate(shift: Booking["shift"] | undefined) {
   if (shift === "24hr") return 2200;
-  if (shift === "12hr") return 1200;
+  if (shift === "Night" || shift === "12hr") return 1200;
+  if (shift === "Visit") return 500;
   return 900;
 }
 
@@ -233,7 +235,7 @@ export async function POST(req: Request) {
     // public booking still allowed
   }
 
-  const shift = body.shift ?? "12hr";
+  const shift = body.shift ?? "Morning";
   const dateErr = validateBookingDates(body.startDate, body.endDate);
   if (dateErr) return NextResponse.json({ error: dateErr }, { status: 400 });
   const defaults = defaultShiftTimes(shift);
@@ -301,6 +303,14 @@ export async function POST(req: Request) {
     shiftStartTime,
     shiftEndTime,
   };
+
+  if (assignedStaffId && isAdmin) {
+    const blocked = staffWorkBlock(
+      db.staff.find((s) => s.id === assignedStaffId),
+      shift,
+    );
+    if (blocked) return NextResponse.json({ error: blocked }, { status: 400 });
+  }
 
   if (assignedStaffId && isAdmin && !body.force) {
     const conflicts = findAssignmentConflicts({
@@ -523,6 +533,14 @@ export async function PATCH(req: Request) {
     nextShift !== current.shift ||
     nextShiftStart !== current.shiftStartTime ||
     nextShiftEnd !== current.shiftEndTime;
+
+  if (nextStaffId && (staffChanged || nextShift !== current.shift)) {
+    const blocked = staffWorkBlock(
+      db.staff.find((s) => s.id === nextStaffId),
+      draft.shift,
+    );
+    if (blocked) return NextResponse.json({ error: blocked }, { status: 400 });
+  }
 
   if (nextStaffId && scheduleTouched && !body.force) {
     const conflicts = findAssignmentConflicts({

@@ -171,15 +171,10 @@ export function LocationsManager({
                 </option>
               ))}
             </select>
-            <select name="shift" className="field" defaultValue="Day">
+            <select name="shift" className="field" defaultValue="Morning">
               <option value="Morning">Morning</option>
-              <option value="Evening">Evening</option>
               <option value="Night">Night</option>
-              <option value="Day">Day</option>
-              <option value="24 Hours">24 Hours</option>
-              <option value="8hr">8hr</option>
-              <option value="12hr">12hr</option>
-              <option value="24hr">24hr</option>
+              <option value="Visit">Visit</option>
             </select>
             <div className="grid grid-cols-2 gap-2">
               <input

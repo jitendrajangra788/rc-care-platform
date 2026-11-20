@@ -86,17 +86,18 @@ export function HomeCareRequestForm() {
   return (
     <>
       <PageHero
+        compact
         title="Request nursing care at home"
         subtitle="Tell us about the patient and the duty you need. The care desk reviews every request before a booking is confirmed."
       />
-      <Section className="bg-[#F7FAF9]">
+      <Section className="bg-[#F7FAF9] !px-4 !py-4 md:!px-6 md:!py-5">
         {reference ? (
           <ReferencePanel title="Home care request received" reference={reference}>
             <p>Our desk will contact you to confirm the need, share a quotation, and schedule care.</p>
             <p>This request is not a confirmed booking yet.</p>
           </ReferencePanel>
         ) : (
-          <form onSubmit={onSubmit} className="relative mx-auto max-w-3xl space-y-4">
+          <form onSubmit={onSubmit} className="relative mx-auto max-w-3xl space-y-2.5">
             <Honeypot />
             <FormSection title="1. Contact person">
               <FormField label="Full name *">
@@ -117,12 +118,12 @@ export function HomeCareRequestForm() {
               </FormField>
             </FormSection>
 
-            <FormSection title="2. Patient details">
+            <FormSection title="2. Patient details" cols={3}>
               <FormField label="Patient name *">
                 <Input name="patientName" required placeholder="Patient full name" />
               </FormField>
               <FormField label="Age *">
-                <Input name="patientAge" required type="number" min={0} max={120} placeholder="Age in years" />
+                <Input name="patientAge" required type="number" min={0} max={120} placeholder="Age" />
               </FormField>
               <FormField label="Gender *">
                 <Select name="patientGender" required defaultValue="Male">
@@ -135,7 +136,7 @@ export function HomeCareRequestForm() {
 
             <FormSection title="3. Location">
               <FormField label="Full address *" className="sm:col-span-2">
-                <Textarea name="address" required rows={3} placeholder="House, street, locality" />
+                <Textarea name="address" required rows={2} className="min-h-16" placeholder="House, street, locality" />
               </FormField>
               <FormField label="Area *">
                 <Input name="area" required placeholder="Subhash Nagar" />
@@ -154,43 +155,21 @@ export function HomeCareRequestForm() {
               </FormField>
             </FormSection>
 
-            <FormSection title="4. Required service">
-              <FormField label="Service *" className="sm:col-span-2">
+            <FormSection title="4. Service and schedule">
+              <FormField label="Service *">
                 <Select name="service" required defaultValue="Home Care Nursing">
                   {HOME_SERVICES.map((item) => (
                     <option key={item}>{item}</option>
                   ))}
                 </Select>
               </FormField>
-            </FormSection>
-
-            <FormSection title="5. Care requirements">
-              <FormField label="Care required *" className="sm:col-span-2">
-                <Textarea name="careDescription" required rows={4} placeholder="Condition, daily help, and what the family needs" />
-              </FormField>
-              <label className="flex items-center gap-2 text-sm text-[#172D3A] sm:col-span-2">
-                <input name="mobilityAssistance" type="checkbox" className="h-4 w-4 accent-[#087F8C]" />
-                Mobility assistance required
-              </label>
-              <FormField label="Special care requirements" className="sm:col-span-2">
-                <Textarea name="specialCare" rows={3} placeholder="Optional — tubes, wound care, dementia support" />
-              </FormField>
-              <FormField label="Doctor instructions" className="sm:col-span-2">
-                <Textarea name="doctorInstructions" rows={3} placeholder="Optional" />
-              </FormField>
-            </FormSection>
-
-            <FormSection title="6. Duty schedule">
-              <FormField label="Duty *" className="sm:col-span-2">
+              <FormField label="Duty *">
                 <Select name="dutyHours" required defaultValue="12 Hours">
                   {HOME_DUTIES.map((item) => (
                     <option key={item}>{item}</option>
                   ))}
                 </Select>
               </FormField>
-            </FormSection>
-
-            <FormSection title="7. Booking preferences">
               <FormField label="Preferred start date *">
                 <Input name="preferredStartDate" required type="date" />
               </FormField>
@@ -209,7 +188,23 @@ export function HomeCareRequestForm() {
               </FormField>
             </FormSection>
 
-            <FormSection title="8. Optional documents">
+            <FormSection title="5. Care requirements">
+              <FormField label="Care required *" className="sm:col-span-2">
+                <Textarea name="careDescription" required rows={2} className="min-h-16" placeholder="Condition, daily help, and what the family needs" />
+              </FormField>
+              <label className="flex items-center gap-2 text-sm text-[#172D3A] sm:col-span-2">
+                <input name="mobilityAssistance" type="checkbox" className="h-4 w-4 accent-[#087F8C]" />
+                Mobility assistance required
+              </label>
+              <FormField label="Special care requirements">
+                <Textarea name="specialCare" rows={2} className="min-h-16" placeholder="Optional — tubes, wound care, dementia support" />
+              </FormField>
+              <FormField label="Doctor instructions">
+                <Textarea name="doctorInstructions" rows={2} className="min-h-16" placeholder="Optional" />
+              </FormField>
+            </FormSection>
+
+            <FormSection title="6. Optional documents">
               <FormField label="Prescription">
                 <Input name="prescription" type="file" accept={fileAccept} />
               </FormField>
@@ -222,7 +217,7 @@ export function HomeCareRequestForm() {
               </FormField>
             </FormSection>
 
-            <FormSection title="9. Consent">
+            <FormSection title="7. Consent">
               <label className="flex items-start gap-2 text-sm text-[#172D3A] sm:col-span-2">
                 <input name="consentContact" type="checkbox" required className="mt-0.5 h-4 w-4 accent-[#087F8C]" />
                 <span>Roshan Care may contact me about this request.</span>

@@ -89,7 +89,7 @@ const emptyForm = {
   patient: emptyPatientForm(),
   guardianName: "",
   careType: "Elderly Care",
-  shift: "12hr" as Booking["shift"],
+  shift: "Morning" as Booking["shift"],
   startDate: new Date().toISOString().slice(0, 10),
   endDate: "",
   amount: "",
@@ -102,8 +102,8 @@ const emptyForm = {
   geofenceRadiusM: "250",
   sitePin: "",
   locationId: "",
-  shiftStartTime: "08:00",
-  shiftEndTime: "20:00",
+  shiftStartTime: "07:00",
+  shiftEndTime: "13:00",
 };
 
 function patientToForm(p: Patient): PatientFormValues {
@@ -1230,22 +1230,32 @@ export function BookingsWorkspace({
                           value={form.shift}
                           onChange={(e) => {
                             const shift = e.target.value as Booking["shift"];
+                            const preset =
+                              shift === "Night"
+                                ? { start: "19:00", end: "07:00" }
+                                : shift === "Visit"
+                                  ? { start: "10:00", end: "12:00" }
+                                  : shift === "8hr"
+                                    ? { start: "08:00", end: "16:00" }
+                                    : shift === "12hr"
+                                      ? { start: "08:00", end: "20:00" }
+                                      : shift === "24hr"
+                                        ? { start: "08:00", end: "08:00" }
+                                        : { start: "07:00", end: "13:00" };
                             setForm({
                               ...form,
                               shift,
-                              shiftStartTime: "08:00",
-                              shiftEndTime:
-                                shift === "8hr"
-                                  ? "16:00"
-                                  : shift === "24hr"
-                                    ? "08:00"
-                                    : "20:00",
+                              shiftStartTime: preset.start,
+                              shiftEndTime: preset.end,
                             });
                           }}
                         >
-                          <option value="8hr">8 hour shift</option>
-                          <option value="12hr">12 hour shift</option>
-                          <option value="24hr">24 hour shift</option>
+                          <option value="Morning">Morning</option>
+                          <option value="Night">Night</option>
+                          <option value="Visit">Visit</option>
+                          {form.shift === "8hr" || form.shift === "12hr" || form.shift === "24hr" ? (
+                            <option value={form.shift}>{form.shift} (existing)</option>
+                          ) : null}
                         </Select>
                       </FormField>
                       <FormField label="Shift start">

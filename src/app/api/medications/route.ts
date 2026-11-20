@@ -52,10 +52,14 @@ export async function POST(req: Request) {
 
   const db = await readDb();
   const staff = staffForUser(db, session);
-  if (!staff) {
+  if (!staff || !staff.dutyShift) {
     return NextResponse.json(
-      { error: "Staff profile not linked. Ask admin to link your login." },
-      { status: 404 },
+      {
+        error: staff
+          ? "Your shift (Morning, Night, or Visit) must be saved on the profile before you can work."
+          : "Staff profile not linked. Ask admin to add your profile first.",
+      },
+      { status: 403 },
     );
   }
 

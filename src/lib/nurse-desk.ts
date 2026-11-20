@@ -67,14 +67,14 @@ export function buildNurseDesk(db: DbShape, user: SessionUser): NurseDeskContext
 
   const currentDuty =
     todayDuties.find((d) => {
-      const p = dutyProgress(history, d.id, today);
+      const p = dutyProgress(history, d.id, today, d.shift);
       return !p.morningDone || !p.eveningDone;
     }) || todayDuties[0];
 
   const attendanceComplete =
     !!currentDuty &&
     (() => {
-      const p = dutyProgress(history, currentDuty.id, today);
+      const p = dutyProgress(history, currentDuty.id, today, currentDuty.shift);
       return p.morningDone && p.eveningDone;
     })();
 
@@ -204,7 +204,7 @@ export function nursePatients(db: DbShape, user: SessionUser): NursePatientRow[]
     );
     const isTodayDuty = !!active && active.startDate <= today;
     const progress = active
-      ? dutyProgress(history, active.id, today)
+      ? dutyProgress(history, active.id, today, active.shift)
       : { morningDone: false, eveningDone: false, complete: false };
     const reports = (reportsByPatient.get(p.id) || []).sort((a, b) =>
       b.createdAt.localeCompare(a.createdAt),

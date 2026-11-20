@@ -68,7 +68,7 @@ export function AdminAttendanceWorkspace({
     let evening = 0;
     let complete = 0;
     for (const b of activeDuties) {
-      const p = dutyProgress(attendance, b.id, today);
+      const p = dutyProgress(attendance, b.id, today, b.shift);
       if (p.morningDone) morning += 1;
       if (p.eveningDone) evening += 1;
       if (p.complete) complete += 1;
@@ -214,7 +214,7 @@ export function AdminAttendanceWorkspace({
               ) : (
                 <div className="grid gap-2 lg:grid-cols-2">
                   {activeDuties.map((b) => {
-                    const p = dutyProgress(attendance, b.id, today);
+                    const p = dutyProgress(attendance, b.id, today, b.shift);
                     const nurse = staff.find((s) => s.id === b.assignedStaffId);
                     return (
                       <article

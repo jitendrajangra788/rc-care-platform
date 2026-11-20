@@ -50,7 +50,7 @@ export function NurseOverviewDashboard({
 }) {
   const firstName = desk.user.name.split(" ")[0];
   const progress = desk.currentDuty
-    ? dutyProgress(desk.history, desk.currentDuty.id, desk.today)
+    ? dutyProgress(desk.history, desk.currentDuty.id, desk.today, desk.currentDuty.shift)
     : null;
 
   const nextAction = !desk.currentDuty
@@ -65,17 +65,23 @@ export function NurseOverviewDashboard({
           label: "Add care note",
           hint: "AM + PM complete — log vitals for the family",
         }
-      : progress?.nextSlot === "evening"
+      : progress?.nextSlot === "night" || progress?.nextSlot === "evening"
         ? {
             href: "/dashboard/nurse/attendance",
-            label: "Mark evening",
-            hint: "Morning done — evening check-in unlocks salary",
+            label: "Mark night",
+            hint: "Night check-in with GPS and photo",
           }
-        : {
-            href: "/dashboard/nurse/attendance",
-            label: "Mark morning",
-            hint: "Start with GPS + photo morning present",
-          };
+        : progress?.nextSlot === "visit"
+          ? {
+              href: "/dashboard/nurse/attendance",
+              label: "Mark visit",
+              hint: "Visit check-in with GPS and photo",
+            }
+          : {
+              href: "/dashboard/nurse/attendance",
+              label: "Mark morning",
+              hint: "Morning check-in with GPS and photo",
+            };
 
   const queue: {
     id: string;
@@ -89,7 +95,12 @@ export function NurseOverviewDashboard({
   if (desk.currentDuty && progress && !progress.complete) {
     queue.push({
       id: "att",
-      title: progress.nextSlot === "evening" ? "Evening check-in pending" : "Morning check-in pending",
+      title:
+        progress.nextSlot === "night" || progress.nextSlot === "evening"
+          ? "Night check-in pending"
+          : progress.nextSlot === "visit"
+            ? "Visit check-in pending"
+            : "Morning check-in pending",
       detail: desk.currentDuty.patientName,
       href: "/dashboard/nurse/attendance",
       tone: "warning",
@@ -118,7 +129,7 @@ export function NurseOverviewDashboard({
   }
 
   const doneToday = desk.todayDuties.filter((d) => {
-    const p = dutyProgress(desk.history, d.id, desk.today);
+    const p = dutyProgress(desk.history, d.id, desk.today, d.shift);
     return p.complete;
   }).length;
   const dutyPct =
@@ -371,7 +382,7 @@ export function NurseOverviewDashboard({
         ) : (
           <div className="space-y-1.5">
             {desk.todayDuties.slice(0, 6).map((d) => {
-              const p = dutyProgress(desk.history, d.id, desk.today);
+              const p = dutyProgress(desk.history, d.id, desk.today, d.shift);
               const step = p.complete ? 2 : p.morningDone ? 1 : 0;
               return (
                 <div

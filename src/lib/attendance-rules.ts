@@ -48,7 +48,7 @@ export function expectedSlotTime(
   now = new Date(),
 ) {
   const { start, end } = resolveShiftTimes(booking);
-  if (slot === "morning") {
+  if (slot === "morning" || slot === "night" || slot === "visit") {
     return parseHmOnDate(dutyDate, start, now);
   }
 

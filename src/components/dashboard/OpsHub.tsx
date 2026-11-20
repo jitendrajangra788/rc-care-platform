@@ -98,7 +98,7 @@ export function OpsHub(props: Props) {
     let evening = 0;
     let complete = 0;
     for (const b of activeBookings) {
-      const p = dutyProgress(props.attendance, b.id, today);
+      const p = dutyProgress(props.attendance, b.id, today, b.shift);
       if (p.morningDone) morning += 1;
       if (p.eveningDone) evening += 1;
       if (p.complete) complete += 1;
@@ -272,7 +272,7 @@ export function OpsHub(props: Props) {
                 activeBookings.map((b) => {
                   const main = props.staff.find((s) => s.id === b.assignedStaffId);
                   const backup = props.staff.find((s) => s.id === b.backupStaffId);
-                  const p = dutyProgress(props.attendance, b.id, today);
+                  const p = dutyProgress(props.attendance, b.id, today, b.shift);
                   const perf = main
                     ? computeStaffPerformance(
                         { attendance: props.attendance } as DbShape,

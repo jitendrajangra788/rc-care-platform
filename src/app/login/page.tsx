@@ -1,19 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
-import {
-  ArrowRight,
-  Eye,
-  EyeOff,
-  HeartPulse,
-  LoaderCircle,
-  Lock,
-  Mail,
-  Phone,
-  ShieldCheck,
-} from "lucide-react";
+import { CalendarClock, Eye, EyeOff, LoaderCircle, MapPinned, Plus, ShieldCheck, Users } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -32,42 +21,47 @@ function identifierLooksValid(value: string) {
 const demos = [
   {
     role: "Admin",
-    title: "Care Desk",
     email: "admin@roshancare.in",
     password: "admin123",
+    dot: "bg-[#7c3aed]",
+    text: "text-[#7c3aed]",
   },
   {
     role: "Coordinator",
-    title: "Coordinator",
     email: "coord@roshancare.in",
     password: "coord123",
+    dot: "bg-[#2563eb]",
+    text: "text-[#2563eb]",
   },
   {
     role: "Nurse",
-    title: "Nurse",
-    email: "nurse@roshancare.in",
+    email: "9876500011",
     password: "12345678",
+    dot: "bg-[#16a34a]",
+    text: "text-[#16a34a]",
+  },
+  {
+    role: "Family",
+    email: "family@roshancare.in",
+    password: "family123",
+    dot: "bg-[#ea580c]",
+    text: "text-[#ea580c]",
   },
 ] as const;
-
-function BrandMark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "grid h-9 w-9 shrink-0 place-items-center rounded-[0.85rem] bg-primary text-white shadow-[var(--shadow-sm)]",
-        className,
-      )}
-      aria-hidden
-    >
-      <HeartPulse className="h-4 w-4" strokeWidth={2.25} />
-    </span>
-  );
-}
 
 export default function LoginPage() {
   const emailId = useId();
   const passwordId = useId();
   const busy = useRef(false);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [activeDemo, setActiveDemo] = useState<string | null>(null);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -81,36 +75,12 @@ export default function LoginPage() {
       body.style.overflow = prevBody;
     };
   }, []);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
-  const [forgot, setForgot] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [activeDemo, setActiveDemo] = useState<string | null>(null);
-
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      try {
-        const saved = window.localStorage.getItem(REMEMBER_KEY);
-        if (!saved) return;
-        setEmail(saved);
-        setRemember(true);
-      } catch {
-        /* private mode */
-      }
-    }, 0);
-    return () => window.clearTimeout(id);
-  }, []);
 
   async function loginWith(nextEmail: string, nextPassword: string, demoRole?: string) {
     if (busy.current) return;
     busy.current = true;
     setLoading(true);
     setError("");
-    setEmail(nextEmail);
-    setPassword(nextPassword);
     if (demoRole) setActiveDemo(demoRole);
 
     const controller = new AbortController();
@@ -127,7 +97,7 @@ export default function LoginPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error || "Login failed");
-        toast.error("Login failed", data.error || "Check email / password");
+        toast.error("Login failed", data.error || "Check mobile / password");
         busy.current = false;
         setLoading(false);
         setActiveDemo(null);
@@ -141,7 +111,6 @@ export default function LoginPage() {
       } catch {
         /* private mode */
       }
-      // Full navigation so session cookie + role dashboard assign reliably
       const dest = String(data.redirectTo || "/dashboard");
       window.location.assign(dest);
     } catch (err) {
@@ -160,7 +129,7 @@ export default function LoginPage() {
     e.preventDefault();
     const id = email.trim();
     if (!identifierLooksValid(id)) {
-      setError("Enter a valid email or 10-digit mobile number.");
+      setError("Enter a 10-digit mobile number. Desk accounts can still use email.");
       return;
     }
     if (!password) {
@@ -171,163 +140,163 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-white">
-      <div className="relative z-10 flex h-full w-full items-stretch justify-center p-2.5 sm:items-center sm:p-4 md:p-5">
-        <div className="animate-rise grid h-full w-full max-w-[980px] overflow-hidden rounded-[1.25rem] border border-[var(--line)] bg-white shadow-[0_16px_48px_rgba(15,23,42,0.08)] sm:h-auto sm:max-h-[min(100%,640px)] md:grid-cols-2 md:min-h-0 md:h-[min(100%,600px)]">
-          {/* Left visual — desktop only */}
-          <aside className="relative isolate hidden overflow-hidden md:block">
-            <Image
-              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=1400&q=80"
-              alt=""
-              fill
-              priority
-              className="object-cover object-[center_16%]"
-              sizes="490px"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(165deg,rgba(11,31,51,0.08)_0%,rgba(11,31,51,0.28)_45%,rgba(7,40,48,0.94)_100%)]" />
-            <div className="absolute inset-x-0 bottom-0 space-y-3 p-7 lg:p-8">
-              <div className="flex items-center gap-2.5">
-                <BrandMark className="h-10 w-10 bg-white/12 ring-1 ring-white/35 backdrop-blur-md" />
-                <div>
-                  <p className="font-display text-[1.55rem] leading-none tracking-[-0.035em] text-white">
-                    Roshan Care
-                  </p>
-                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-teal-100/75">
-                    Trusted Home Healthcare
-                  </p>
-                </div>
-              </div>
-              <p className="max-w-[19rem] text-[13px] leading-relaxed text-white/85">
-                Bookings, GPS present, medicine charts, and family updates — one desk for Bhilwara.
-              </p>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-white/65">
-                <span className="inline-flex items-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5 text-teal-200" />
-                  Session secured
-                </span>
-                <a href="tel:+917073231360" className="inline-flex items-center gap-1 hover:text-white">
-                  <Phone className="h-3.5 w-3.5 text-teal-200" />
-                  70732 31360
+    <div className="h-dvh overflow-hidden bg-[#f4f7fb] lg:grid lg:h-auto lg:min-h-dvh lg:grid-cols-2 lg:overflow-visible">
+      <aside className="relative hidden overflow-hidden bg-[#071a33] text-white lg:flex lg:flex-col lg:justify-between lg:px-14 lg:py-10">
+        <div className="pointer-events-none absolute -left-24 top-[-8%] h-72 w-72 rounded-full bg-[#12325d]/80" />
+        <div className="pointer-events-none absolute -right-16 top-[18%] h-80 w-80 rounded-full bg-[#0c2748]" />
+        <div className="pointer-events-none absolute bottom-[-12%] left-[18%] h-96 w-96 rounded-full bg-[#0d2c52]" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#1d6fb8]">
+            <Plus className="h-6 w-6" strokeWidth={2.4} />
+          </span>
+          <span className="text-xl font-semibold tracking-tight">Roshan Care</span>
+        </div>
+
+        <div className="relative z-10 max-w-md">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#12345c] px-3 py-1 text-xs font-medium text-[#d6e4f5]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#7eb6ee]" />
+            Home healthcare platform
+          </span>
+          <h2 className="mt-6 text-4xl font-semibold leading-[1.15] tracking-tight xl:text-5xl">
+            Modern Home
+            <br />
+            Care Management
+          </h2>
+          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-[#b7c6d9]">
+            Duties, attendance, and family updates in one place — Morning, Night, and Visit.
+          </p>
+          <ul className="mt-8 space-y-4 text-sm text-[#d5e2f0]">
+            <li className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#12345c]">
+                <Users className="h-4 w-4 text-[#8eb7e8]" />
+              </span>
+              Assigned duties and care notes
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#12345c]">
+                <CalendarClock className="h-4 w-4 text-[#8eb7e8]" />
+              </span>
+              Morning, Night, and Visit shifts
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#12345c]">
+                <MapPinned className="h-4 w-4 text-[#8eb7e8]" />
+              </span>
+              Care-site GPS attendance
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-[#12345c]">
+                <ShieldCheck className="h-4 w-4 text-[#8eb7e8]" />
+              </span>
+              Staff see only their own duty
+            </li>
+          </ul>
+        </div>
+
+        <p className="relative z-10 text-xs text-[#8ea3bb]">© 2026 Roshan Care · Bhilwara</p>
+      </aside>
+
+      <section className="flex h-full items-center justify-center overflow-hidden px-4 py-3 sm:px-8 lg:h-auto lg:min-h-dvh lg:py-10">
+        <div className="w-full max-w-[420px]">
+          <div className="mb-3 flex items-center gap-2 lg:hidden">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#1d6fb8] text-white">
+              <Plus className="h-5 w-5" />
+            </span>
+            <span className="text-lg font-semibold text-[#12263f]">Roshan Care</span>
+          </div>
+
+          <h1 className="text-xl font-semibold tracking-tight text-[#12263f] sm:text-[1.65rem]">
+            {forgot ? "Reset access" : "Welcome back"}
+          </h1>
+          <p className="mt-0.5 text-xs text-[#8b97a8] sm:text-sm">
+            {forgot
+              ? "The care desk verifies your account before a password is changed."
+              : "Sign in to your Roshan Care account"}
+          </p>
+
+          <div className="mt-3 rounded-2xl border border-[#e6ebf2] bg-white p-3.5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:mt-6 sm:p-5">
+            {forgot ? (
+              <div className="space-y-3">
+                <a
+                  href="tel:+917073231360"
+                  className="flex h-11 w-full items-center justify-center rounded-lg bg-[#1d6fb8] text-sm font-semibold text-white"
+                >
+                  Call 70732 31360
                 </a>
+                <button
+                  type="button"
+                  className="h-11 w-full rounded-lg border border-[#e6ebf2] text-sm font-semibold text-[#12263f]"
+                  onClick={() => setForgot(false)}
+                >
+                  Back to sign in
+                </button>
               </div>
-            </div>
-          </aside>
-
-          {/* Form column */}
-          <section className="flex h-full min-h-0 flex-col justify-between px-4 py-3.5 sm:px-7 sm:py-5 lg:px-9">
-            <div className="min-h-0">
-              {/* Compact mobile brand */}
-              <div className="mb-3 flex items-center gap-2.5 md:mb-4 md:hidden">
-                <BrandMark />
-                <div>
-                  <p className="font-display text-lg leading-none tracking-[-0.03em] text-heading">
-                    Roshan Care
-                  </p>
-                  <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
-                    Care desk login
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-3 hidden md:block">
-                <BrandMark />
-              </div>
-
-              <h1 className="font-display text-[1.55rem] leading-none tracking-[-0.035em] text-heading sm:text-[1.85rem]">
-                {forgot ? "Reset access" : "Welcome back"}
-              </h1>
-              <p className="mt-1 text-[13px] text-muted">
-                {forgot
-                  ? "The care desk verifies your account before a password is changed."
-                  : "Sign in with your work email or registered mobile."}
-              </p>
-
-              {forgot ? (
-                <div className="mt-4 space-y-2.5">
-                  <a href="tel:+917073231360" className="btn btn-primary h-10 w-full !rounded-[0.85rem] !text-sm">
-                    <Phone className="h-4 w-4" /> Call 70732 31360
-                  </a>
-                  <button
-                    type="button"
-                    className="btn btn-outline h-10 w-full !rounded-[0.85rem] !text-sm"
-                    onClick={() => setForgot(false)}
-                  >
-                    Back to sign in
-                  </button>
-                </div>
-              ) : (
-              <form onSubmit={onSubmit} className="mt-3.5 space-y-2.5 sm:mt-4 sm:space-y-3">
-                <div>
-                  <label htmlFor={emailId} className="mb-1 block text-[13px] font-semibold text-heading">
-                    Email or mobile
-                  </label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                    <input
-                      id={emailId}
-                      className="field field-with-icon !h-10 !rounded-[0.85rem] !py-0 text-[15px]"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      type="text"
-                      inputMode="email"
-                      autoComplete="username"
-                      placeholder="you@roshancare.in or 10-digit mobile"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <label htmlFor={passwordId} className="text-[13px] font-semibold text-heading">
-                      Password
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setForgot(true)}
-                      className="text-[12px] font-semibold text-primary hover:text-[var(--primary-deep)]"
-                    >
-                      Forgot?
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            ) : (
+              <form onSubmit={onSubmit} className="space-y-2.5 sm:space-y-4" autoComplete="off">
+                <label className="block text-sm font-medium text-[#344054]" htmlFor={emailId}>
+                  Mobile or email
+                  <input
+                    id={emailId}
+                    name="rc-login-id"
+                    className="mt-1 h-10 w-full rounded-lg border border-[#e4e9f0] bg-white px-3 text-[15px] text-[#12263f] outline-none placeholder:text-[#b0b8c4] focus:border-[#1d6fb8] focus:ring-2 focus:ring-[#1d6fb8]/20 sm:mt-1.5 sm:h-11"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    placeholder="Mobile number or email"
+                    required
+                  />
+                </label>
+                <label className="block text-sm font-medium text-[#344054]" htmlFor={passwordId}>
+                  Password
+                  <span className="relative mt-1 block sm:mt-1.5">
                     <input
                       id={passwordId}
-                      className="field field-with-icon !h-10 !rounded-[0.85rem] !py-0 pr-11 text-[15px]"
+                      name="rc-login-secret"
+                      className="h-10 w-full rounded-lg border border-[#e4e9f0] bg-white px-3 pr-11 text-[15px] text-[#12263f] outline-none placeholder:text-[#b0b8c4] focus:border-[#1d6fb8] focus:ring-2 focus:ring-[#1d6fb8]/20 sm:h-11"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      placeholder="Enter password"
+                      autoComplete="new-password"
+                      placeholder="Password"
                       required
                     />
                     <button
                       type="button"
-                      className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-muted hover:bg-[var(--surface-muted)] hover:text-heading"
+                      className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-[#98a2b3] hover:bg-[#f4f7fb]"
                       onClick={() => setShowPassword((v) => !v)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-2 text-[13px] font-medium text-heading">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-[var(--line)] accent-[var(--primary)]"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                  />
-                  Remember me on this device
+                  </span>
                 </label>
 
-                {error ? (
-                  <p
-                    role="alert"
-                    className="rounded-[0.75rem] bg-[var(--danger-soft)] px-3 py-2 text-[13px] text-danger"
+                <div className="flex items-center justify-between text-[13px]">
+                  <label className="flex items-center gap-2 text-[#344054]">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-[#1d6fb8]"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                    />
+                    Remember me
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setForgot(true)}
+                    className="font-medium text-[#1d6fb8]"
                   >
+                    Forgot password?
+                  </button>
+                </div>
+
+                {error ? (
+                  <p role="alert" className="rounded-lg bg-[#fde8e8] px-3 py-2 text-[13px] text-[#b42318]">
                     {error}
                   </p>
                 ) : null}
@@ -335,65 +304,56 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn btn-primary h-10 w-full !rounded-[0.85rem] !text-sm disabled:cursor-wait"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#1d6fb8] text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70"
                 >
-                  {loading && !activeDemo ? (
-                    <>
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                      Signing in…
-                    </>
-                  ) : (
-                    <>
-                      Secure login
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
+                  {loading && !activeDemo ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                  Sign in
                 </button>
               </form>
-              )}
+            )}
 
-              {showDemos && !forgot ? (
-                <div className="mt-3 border-t border-[var(--line)] pt-3 sm:mt-4 sm:pt-3.5">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                    Quick demo
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {demos.map((d) => (
-                      <button
-                        key={d.role}
-                        type="button"
-                        disabled={loading}
-                        onClick={() => void loginWith(d.email, d.password, d.role)}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[12px] font-semibold transition",
-                          "disabled:cursor-wait disabled:opacity-60",
-                          activeDemo === d.role
-                            ? "border-primary bg-[var(--primary-soft)] text-primary"
-                            : "border-[var(--line)] bg-[#f8fafc] text-heading hover:border-primary/35 hover:bg-[var(--primary-soft)]",
-                        )}
-                      >
-                        {activeDemo === d.role ? (
-                          <LoaderCircle className="h-3 w-3 animate-spin" />
-                        ) : null}
-                        {d.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            <p className="mt-3 border-t border-[#eef2f6] pt-3 text-center text-sm text-[#667085] sm:mt-4 sm:pt-4">
+              Don&apos;t have an account?{" "}
+              <Link href="/careers/apply" className="font-semibold text-[#1d6fb8]">
+                Sign up
+              </Link>
+            </p>
+          </div>
 
-            <div className="mt-2 flex shrink-0 items-center justify-between gap-2 pt-1 text-[12px] text-muted sm:mt-3">
-              <Link href="/" className="font-semibold hover:text-primary">
-                ← Website
-              </Link>
-              <Link href="/book" className="font-semibold text-primary hover:underline">
-                Book a nurse
-              </Link>
+          {showDemos && !forgot ? (
+            <div className="mt-3 sm:mt-6">
+              <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#98a2b3]">
+                <span className="h-px flex-1 bg-[#e6ebf2]" />
+                Demo accounts
+                <span className="h-px flex-1 bg-[#e6ebf2]" />
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
+                {demos.map((d) => (
+                  <button
+                    key={d.role}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => void loginWith(d.email, d.password, d.role)}
+                    className={cn(
+                      "rounded-xl border bg-white px-2.5 py-2 text-left transition hover:border-[#c9d7ea] disabled:opacity-60 sm:px-3 sm:py-3",
+                      activeDemo === d.role ? "border-[#1d6fb8] ring-2 ring-[#1d6fb8]/15" : "border-[#e6ebf2]",
+                    )}
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <span className={cn("h-2 w-2 rounded-full", d.dot)} />
+                      <span className={d.text}>{d.role}</span>
+                    </span>
+                    <span className="mt-0.5 block truncate pl-4 text-[11px] text-[#8b97a8] sm:text-xs">{d.email}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-center text-[11px] text-[#98a2b3] sm:mt-3 sm:text-xs">
+                Tap a role to sign in. The form stays empty.
+              </p>
             </div>
-          </section>
+          ) : null}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

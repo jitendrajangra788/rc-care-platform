@@ -4,15 +4,16 @@ import path from "path";
 import { getSession } from "@/lib/auth";
 import { pushActivity } from "@/lib/activity";
 import { pushAudit } from "@/lib/audit";
-import { dutyProgress, normalizeSlot, todayDutyDate } from "@/lib/duty";
+import { dutyProgress, isSingleShift, normalizeSlot, todayDutyDate } from "@/lib/duty";
 import { readDb, writeDb } from "@/lib/db";
 import {
   DEFAULT_GEOFENCE_M,
-  WEAK_GPS_M,
+  UNUSABLE_GPS_M,
   distanceMeters,
   effectiveGeofenceM,
   gpsQuality,
   isImpossibleJump,
+  isUsableGps,
 } from "@/lib/geo";
 import { evaluateCheckInTiming } from "@/lib/attendance-rules";
 import { photoFingerprint } from "@/lib/photoHash";
@@ -163,7 +164,10 @@ export async function POST(req: Request) {
 
   const slot = normalizeSlot(body.type || "morning");
   if (!slot) {
-    return NextResponse.json({ error: "type must be morning or evening" }, { status: 400 });
+    return NextResponse.json(
+      { error: "type must be morning, night, or visit" },
+      { status: 400 },
+    );
   }
 
   const db = await readDb();
@@ -182,10 +186,14 @@ export async function POST(req: Request) {
     }
     const { staffForUser } = await import("@/lib/scope");
     staff = staffForUser(db, session);
-    if (!staff) {
+    if (!staff || !staff.dutyShift) {
       return NextResponse.json(
-        { error: "Staff profile not linked. Ask admin to assign your login to a staff record." },
-        { status: 404 },
+        {
+          error: staff
+            ? "Your shift (Morning, Night, or Visit) must be saved on the profile before you can work."
+            : "Staff profile not linked. Ask admin to add your profile first.",
+        },
+        { status: 403 },
       );
     }
     if (!booking.assignedStaffId || booking.assignedStaffId !== staff.id) {
@@ -204,24 +212,24 @@ export async function POST(req: Request) {
     isAdminMark && body.dutyDate && /^\d{4}-\d{2}-\d{2}$/.test(body.dutyDate)
       ? body.dutyDate
       : todayDutyDate();
-  const progress = dutyProgress(db.attendance, booking.id, dutyDate);
+  const progress = dutyProgress(db.attendance, booking.id, dutyDate, booking.shift);
 
-  if (slot === "morning" && progress.morningDone) {
+  if (!progress.nextSlot) {
     return NextResponse.json(
-      { error: "Morning present already marked for this date." },
+      { error: "Is duty ka attendance aaj ho chuka hai." },
       { status: 409 },
     );
   }
-  if (slot === "evening" && !progress.morningDone) {
+  if (slot !== progress.nextSlot) {
+    const label =
+      progress.nextSlot === "night" || progress.nextSlot === "evening"
+        ? "Night"
+        : progress.nextSlot === "visit"
+          ? "Visit"
+          : "Morning";
     return NextResponse.json(
-      { error: "Pehle morning present lagao. Evening tabhi open hota hai." },
+      { error: `Is duty par ${label} check-in hota hai.` },
       { status: 400 },
-    );
-  }
-  if (slot === "evening" && progress.eveningDone) {
-    return NextResponse.json(
-      { error: "Evening present already marked for this date." },
-      { status: 409 },
     );
   }
 
@@ -281,12 +289,12 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!body.demoForceOnSite && quality === "weak") {
+    if (!body.demoForceOnSite && !isUsableGps(body.accuracy)) {
       return NextResponse.json(
         {
-          error: `GPS signal weak (±${Math.round(body.accuracy || 0)}m). Open sky me Refresh GPS karo, ya demo mode on karo.`,
+          error: `GPS accurate nahi (±${Math.round(body.accuracy || 0)}m). Phone settings me Location → High accuracy on karke Refresh GPS karo. Network location se present nahi lagega.`,
           gpsQuality: quality,
-          weakGpsThresholdM: WEAK_GPS_M,
+          weakGpsThresholdM: UNUSABLE_GPS_M,
         },
         { status: 400 },
       );
@@ -384,12 +392,12 @@ export async function POST(req: Request) {
   let payout: SalaryPayout | null = null;
   let dutyComplete = false;
 
-  if (slot === "morning") {
+  if (slot === "morning" || slot === "night" || slot === "visit") {
     staff!.status = "on-duty";
     if (booking.status === "assigned") booking.status = "active";
   }
 
-  if (slot === "evening") {
+  if (slot === "evening" || isSingleShift(booking.shift)) {
     dutyComplete = true;
     const morningMult =
       typeof progress.morning?.salaryMultiplier === "number"
@@ -401,7 +409,7 @@ export async function POST(req: Request) {
       staff!,
       booking,
       dutyDate,
-      progress.morning!.id,
+      progress.morning?.id || record.id,
       record.id,
       session,
       dayMult,
@@ -436,7 +444,7 @@ export async function POST(req: Request) {
       attendance: record,
       dutyComplete,
       payout,
-      progress: dutyProgress(db.attendance, booking.id, dutyDate),
+      progress: dutyProgress(db.attendance, booking.id, dutyDate, booking.shift),
       punctualityStatus: timing.status,
       minutesLate: timing.minutesLate,
       salaryMultiplier: timing.salaryMultiplier,

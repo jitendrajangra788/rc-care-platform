@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/api-guard";
 import { readDb, writeDb } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { phoneKey, phonesMatch } from "@/lib/phone";
+import { isStaffDutyShift } from "@/lib/schedule";
 import type { Staff, User } from "@/lib/types";
 
 export async function GET() {
@@ -33,13 +35,21 @@ export async function POST(req: Request) {
     status?: Staff["status"];
     email?: string;
     password?: string;
+    dutyShift?: Staff["dutyShift"];
     salaryMonthly?: number;
     salaryPerShift?: number;
   };
 
-  if (!body.name || !body.phone || !body.role || !body.email || !body.password) {
+  const mobile = phoneKey(body.phone);
+  if (!body.name || !body.role || !mobile || !body.password) {
     return NextResponse.json(
-      { error: "Name, role, phone, email and password are required" },
+      { error: "Name, role, mobile number and password are required" },
+      { status: 400 },
+    );
+  }
+  if (!body.dutyShift || !isStaffDutyShift(body.dutyShift)) {
+    return NextResponse.json(
+      { error: "Shift must be Morning, Night, or Visit" },
       { status: 400 },
     );
   }
@@ -47,10 +57,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Per-shift salary is required" }, { status: 400 });
   }
 
-  const email = body.email.trim().toLowerCase();
+  const email = body.email?.trim().toLowerCase() || `${mobile}@staff.roshancare.in`;
   const db = await readDb();
   if (db.users.some((u) => u.email.toLowerCase() === email)) {
     return NextResponse.json({ error: "Email already exists" }, { status: 409 });
+  }
+  if (db.staff.some((s) => phonesMatch(s.phone, mobile)) || db.users.some((u) => phonesMatch(u.phone, mobile))) {
+    return NextResponse.json({ error: "This mobile number is already used" }, { status: 409 });
   }
 
   const userId = `u-${Date.now()}`;
@@ -61,7 +74,7 @@ export async function POST(req: Request) {
     email,
     password: hashPassword(body.password),
     role: "nurse",
-    phone: body.phone.trim(),
+    phone: mobile,
     active: true,
   };
   const staff: Staff = {
@@ -70,7 +83,8 @@ export async function POST(req: Request) {
     userId,
     email,
     role: body.role,
-    phone: body.phone.trim(),
+    phone: mobile,
+    dutyShift: body.dutyShift,
     area: body.area?.trim() || "Bhilwara",
     skills: (body.skills || "")
       .split(",")
@@ -88,7 +102,7 @@ export async function POST(req: Request) {
   await writeDb(db);
 
   return NextResponse.json(
-    { staff: { ...staff, loginEmail: email, password: body.password } },
+    { staff: { ...staff, loginPhone: mobile, password: body.password } },
     { status: 201 },
   );
 }
@@ -107,6 +121,7 @@ export async function PATCH(req: Request) {
     status?: Staff["status"];
     email?: string;
     password?: string;
+    dutyShift?: Staff["dutyShift"];
     salaryMonthly?: number;
     salaryPerShift?: number;
   };
@@ -130,12 +145,22 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Email already used by another account" }, { status: 409 });
     }
   }
+  if (body.phone && phoneKey(body.phone) !== phoneKey(current.phone)) {
+    const taken =
+      db.staff.some((s) => s.id !== current.id && phonesMatch(s.phone, body.phone)) ||
+      db.users.some((u) => u.id !== current.userId && phonesMatch(u.phone, body.phone));
+    if (taken) {
+      return NextResponse.json({ error: "This mobile number is already used" }, { status: 409 });
+    }
+  }
 
   const updated: Staff = {
     ...current,
     name: body.name?.trim() || current.name,
     role: body.role || current.role,
-    phone: body.phone?.trim() || current.phone,
+    phone: phoneKey(body.phone) || current.phone,
+    dutyShift:
+      body.dutyShift && isStaffDutyShift(body.dutyShift) ? body.dutyShift : current.dutyShift,
     area: body.area?.trim() || current.area,
     status: body.status || current.status,
     skills:
@@ -168,19 +193,20 @@ export async function PATCH(req: Request) {
       };
       updated.email = db.users[uIdx].email;
     }
-  } else if (email && body.password) {
+  } else if (body.password?.trim()) {
+    const loginEmail = email || `${phoneKey(updated.phone)}@staff.roshancare.in`;
     const userId = `u-${Date.now()}`;
     db.users.push({
       id: userId,
       name: updated.name,
-      email,
+      email: loginEmail,
       password: hashPassword(body.password.trim()),
       role: "nurse",
       phone: updated.phone,
       active: true,
     });
     updated.userId = userId;
-    updated.email = email;
+    updated.email = loginEmail;
   }
 
   db.staff[idx] = updated;

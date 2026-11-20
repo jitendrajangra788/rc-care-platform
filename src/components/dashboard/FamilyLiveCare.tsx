@@ -53,7 +53,7 @@ export function FamilyLiveCare({
   const selected = bookings.find((b) => b.id === bookingId) || bookings[0];
   const nurse = staff.find((s) => s.id === selected?.assignedStaffId);
   const progress = useMemo(
-    () => (selected ? dutyProgress(attendance, selected.id, today) : null),
+    () => (selected ? dutyProgress(attendance, selected.id, today, selected.shift) : null),
     [attendance, selected, today],
   );
   const photos = attendance.filter((a) => a.bookingId === selected?.id).slice(0, 8);

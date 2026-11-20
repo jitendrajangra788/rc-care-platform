@@ -30,6 +30,8 @@ export type Staff = {
   rating: number;
   shiftsCompleted: number;
   phone: string;
+  /** The only shift this person can work: Morning, Night, or Visit. */
+  dutyShift?: "Morning" | "Night" | "Visit";
   email?: string;
   photoUrl?: string;
   bio?: string;
@@ -65,7 +67,7 @@ export type SiteAllotment = {
   locationId: string;
   staffId: string;
   bookingId?: string;
-  shift: "Morning" | "Evening" | "Night" | "Day" | "24 Hours" | "8hr" | "12hr" | "24hr";
+  shift: "Morning" | "Evening" | "Night" | "Visit" | "Day" | "24 Hours" | "8hr" | "12hr" | "24hr";
   startDate: string;
   endDate?: string;
   status: "active" | "completed" | "cancelled";
@@ -104,7 +106,7 @@ export type Booking = {
   /** Linked CRM patient (dual-read with patientName during migration) */
   patientId?: string;
   careType: string;
-  shift: "8hr" | "12hr" | "24hr";
+  shift: "Morning" | "Night" | "Visit" | "8hr" | "12hr" | "24hr";
   address: string;
   area: string;
   startDate: string;
@@ -321,7 +323,7 @@ export type Lead = {
   createdAt: string;
 };
 
-export type AttendanceSlot = "morning" | "evening";
+export type AttendanceSlot = "morning" | "evening" | "night" | "visit";
 
 export type AttendancePunctuality = "present" | "late" | "half-day";
 

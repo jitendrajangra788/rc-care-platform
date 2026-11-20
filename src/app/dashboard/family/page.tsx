@@ -31,7 +31,7 @@ export default async function FamilyDashboardPage() {
   const nurse = primary
     ? db.staff.find((s) => s.id === primary.assignedStaffId)
     : undefined;
-  const progress = primary ? dutyProgress(db.attendance, primary.id, today) : null;
+  const progress = primary ? dutyProgress(db.attendance, primary.id, today, primary.shift) : null;
   const latestNote = notes[0];
 
   return (

@@ -3,10 +3,8 @@ import { HomeCareRequestsManager } from "@/components/dashboard/HomeCareRequests
 import { PageHeader } from "@/components/ui/PageHeader";
 import { readDb } from "@/lib/db";
 import { toHomeCareDTO } from "@/lib/enquiries";
-import { can } from "@/lib/permissions";
-
 export default async function HomeCareRequestsPage() {
-  const user = await requireOps();
+  await requireOps();
   const db = await readDb();
   const requests = (db.homeCareRequests || []).map(toHomeCareDTO);
   const staff = db.staff.map((member) => ({
@@ -22,11 +20,7 @@ export default async function HomeCareRequestsPage() {
         title="Home Care Requests"
         subtitle="Review family requests, record contact, assign staff, and convert a confirmed request into a booking."
       />
-      <HomeCareRequestsManager
-        requests={requests}
-        staff={staff}
-        canConvert={can(user, "bookings.write") && can(user, "patients.write")}
-      />
+      <HomeCareRequestsManager requests={requests} staff={staff} />
     </div>
   );
 }

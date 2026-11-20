@@ -31,7 +31,7 @@ export const bookingWriteSchema = z.object({
   phone: z.string().min(7).max(20).optional(),
   careType: z.string().min(2).max(120).optional(),
   address: z.string().min(3).max(400).optional(),
-  shift: z.enum(["8hr", "12hr", "24hr"]).optional(),
+  shift: z.enum(["Morning", "Night", "Visit", "8hr", "12hr", "24hr"]).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   shiftStartTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),

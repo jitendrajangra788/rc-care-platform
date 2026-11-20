@@ -122,7 +122,7 @@ export function NurseDutiesBoard({
       ) : (
         <div className="space-y-2">
           {rows.map((d) => {
-            const progress = dutyProgress(history, d.id, today);
+            const progress = dutyProgress(history, d.id, today, d.shift);
             const schedules = medSchedules.filter((s) => s.bookingId === d.id);
             return (
               <ListTile key={d.id} className="animate-dash-in !p-0 overflow-hidden">

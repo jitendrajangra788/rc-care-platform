@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/schedule.test.mjs && node tests/permissions.test.mjs && node tests/password.test.mjs && node tests/rbac-matrix.test.mjs && node tests/enquiries.test.mjs"
+    "test": "node tests/schedule.test.mjs && node tests/permissions.test.mjs && node tests/password.test.mjs && node tests/rbac-matrix.test.mjs && node tests/enquiries.test.mjs && node tests/privacy.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

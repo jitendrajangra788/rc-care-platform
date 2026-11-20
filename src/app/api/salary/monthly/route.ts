@@ -15,9 +15,11 @@ export async function GET(req: Request) {
   const db = await readDb();
   let rows = (db.monthlySalaries || []).filter((s) => s.month === month && s.year === year);
 
+  let staffRows = db.staff;
   if (session.role === "nurse") {
     const staff = db.staff.find((s) => s.userId === session.id || s.name === session.name);
     rows = rows.filter((r) => r.staffId === staff?.id);
+    staffRows = staff ? [staff] : [];
   } else if (session.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -26,7 +28,7 @@ export async function GET(req: Request) {
     month,
     year,
     salaries: rows,
-    staff: db.staff.map((s) => ({
+    staff: staffRows.map((s) => ({
       id: s.id,
       name: s.name,
       role: s.role,

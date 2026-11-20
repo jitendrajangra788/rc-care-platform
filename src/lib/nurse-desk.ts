@@ -2,7 +2,10 @@ import { dutyProgress, todayDutyDate } from "@/lib/duty";
 import {
   attendanceForStaff,
   dutiesForStaff,
+  dutyLabel,
   patientIdsForUser,
+  redactNurseBooking,
+  redactNursePatient,
   staffForUser,
 } from "@/lib/scope";
 import type {
@@ -126,22 +129,27 @@ export function buildNurseDesk(db: DbShape, user: SessionUser): NurseDeskContext
     .filter((p) => p.status === "paid")
     .reduce((s, p) => s + (p.amount || 0), 0);
 
+  const safe = (list: Booking[]) => list.map(redactNurseBooking);
+
   return {
     user,
     staff,
     today,
-    duties,
-    activeDuties,
-    todayDuties,
-    upcomingDuties,
-    completedDuties,
-    currentDuty,
+    duties: safe(duties),
+    activeDuties: safe(activeDuties),
+    todayDuties: safe(todayDuties),
+    upcomingDuties: safe(upcomingDuties),
+    completedDuties: safe(completedDuties),
+    currentDuty: currentDuty ? redactNurseBooking(currentDuty) : undefined,
     history,
     todayAttendanceCount,
     attendanceComplete,
     notes,
     pendingReports,
-    medSchedules,
+    medSchedules: medSchedules.map((s) => ({
+      ...s,
+      patientName: dutyLabel(s.bookingId),
+    })),
     pendingMedDuties,
     monthEarned,
     monthPaid,
@@ -217,16 +225,18 @@ export function nursePatients(db: DbShape, user: SessionUser): NursePatientRow[]
     if (doctorPending) pendingTaskCount += 1;
 
     return {
-      patient: p,
-      bookings,
-      activeBooking: active,
+      patient: redactNursePatient(p, active?.id || bookings[0]?.id),
+      bookings: bookings.map(redactNurseBooking),
+      activeBooking: active ? redactNurseBooking(active) : undefined,
       today,
       morningDone: progress.morningDone,
       eveningDone: progress.eveningDone,
       attendanceComplete: progress.complete,
       isTodayDuty,
       urgent: !!urgent,
-      latestReport,
+      latestReport: latestReport
+        ? { ...latestReport, attachmentUrl: undefined, attachmentName: undefined }
+        : undefined,
       reportPendingToday,
       doctorPending,
       pendingTaskCount,

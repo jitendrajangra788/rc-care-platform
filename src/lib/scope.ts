@@ -3,6 +3,7 @@ import type {
   Booking,
   DbShape,
   MedicationLog,
+  Patient,
   SessionUser,
   Staff,
 } from "@/lib/types";
@@ -107,4 +108,128 @@ export function patientIdsForUser(db: DbShape, user: SessionUser): Set<string> {
   }
 
   return new Set();
+}
+
+const PHONE_IN_TEXT = /(?:\+?\d{1,3}[\s-]?)?[6-9]\d{9}/g;
+
+/** Stable duty label. Never the patient's name. */
+export function dutyLabel(bookingId: string) {
+  return `Duty ${bookingId}`;
+}
+
+/** Remove phone numbers and a known patient name from care text. */
+export function stripIdentityText(text: string | undefined, names: string[] = []) {
+  if (!text) return text;
+  let out = text;
+  for (const name of names) {
+    const trimmed = name.trim();
+    if (trimmed.length >= 3 && !trimmed.startsWith("Duty ")) {
+      out = out.split(trimmed).join("the patient");
+    }
+  }
+  return out.replace(PHONE_IN_TEXT, "").replace(/[ \t]{2,}/g, " ").trim();
+}
+
+/** Nurse-safe booking: location, shift, status, and care notes. No identity or billing. */
+export function redactNurseBooking(booking: Booking): Booking {
+  return {
+    ...booking,
+    patientName: dutyLabel(booking.id),
+    phone: "",
+    guardianName: undefined,
+    familyUserId: undefined,
+    amount: 0,
+    upiId: undefined,
+    staffPayPerShift: undefined,
+    patientAge: undefined,
+    gender: undefined,
+    notes: stripIdentityText(booking.notes, [booking.patientName]),
+  };
+}
+
+/** Nurse-safe patient row keyed to a duty. Address stays so the nurse can reach the site. */
+export function redactNursePatient(patient: Patient, bookingId?: string): Patient {
+  return {
+    ...patient,
+    name: bookingId ? dutyLabel(bookingId) : "Assigned duty",
+    phone: "",
+    age: undefined,
+    gender: undefined,
+    notes: undefined,
+    familyUserIds: [],
+    userId: undefined,
+  };
+}
+
+/**
+ * Read-only projection for nurse server pages.
+ * Never pass the result to writeDb — it is a filtered copy, not the database.
+ */
+export function nurseView(db: DbShape, user: SessionUser): DbShape {
+  if (normalizeRole(user.role) !== "nurse") return db;
+
+  const staff = staffForUser(db, user);
+  const duties = dutiesForStaff(db, staff);
+  const dutyIds = new Set(duties.map((b) => b.id));
+  const patientIds = new Set(
+    duties.map((b) => b.patientId).filter((id): id is string => Boolean(id)),
+  );
+
+  return {
+    ...db,
+    users: db.users
+      .filter((u) => u.id === user.id)
+      .map((u) => ({ ...u, password: "" })),
+    staff: staff ? [staff] : [],
+    bookings: duties.map(redactNurseBooking),
+    patients: (db.patients || [])
+      .filter((p) => patientIds.has(p.id))
+      .map((p) => {
+        const duty = duties.find((d) => d.patientId === p.id);
+        return redactNursePatient(p, duty?.id);
+      }),
+    invoices: [],
+    leads: [],
+    payments: [],
+    expenses: [],
+    auditLogs: [],
+    doctorNotes: [],
+    callLogs: [],
+    homeCareRequests: [],
+    careerApplications: [],
+    salaryPayouts: (db.salaryPayouts || [])
+      .filter((p) => staff && p.staffId === staff.id)
+      .map((p) => ({ ...p, patientName: dutyLabel(p.bookingId) })),
+    medications: (db.medications || [])
+      .filter((m) => (staff && m.staffId === staff.id) || m.nurseId === user.id)
+      .map((m) => ({
+        ...m,
+        patientName: dutyLabel(m.bookingId),
+        photoUrl: undefined,
+      })),
+    medSchedules: (db.medSchedules || [])
+      .filter((m) => dutyIds.has(m.bookingId))
+      .map((m) => ({ ...m, patientName: dutyLabel(m.bookingId) })),
+    sosAlerts: (db.sosAlerts || [])
+      .filter((s) => dutyIds.has(s.bookingId) || s.raisedByUserId === user.id)
+      .map((s) => ({ ...s, patientName: dutyLabel(s.bookingId) })),
+    careReports: (db.careReports || [])
+      .filter((r) => patientIds.has(r.patientId))
+      .map((r) => ({ ...r, attachmentUrl: undefined, attachmentName: undefined })),
+    attendance: attendanceForStaff(db, staff, user),
+    leaves: (db.leaves || []).filter((l) => staff && l.staffId === staff.id),
+    documents: (db.documents || []).filter((d) => staff && d.staffId === staff.id),
+    advances: (db.advances || []).filter((a) => staff && a.staffId === staff.id),
+    activities: (db.activities || []).filter((a) => a.actorId === user.id),
+    notifications: (db.notifications || []).filter((n) => n.userId === user.id),
+    complaints: (db.complaints || []).filter((c) => c.raisedByUserId === user.id),
+    nurseAvailability: (db.nurseAvailability || []).filter(
+      (a) => staff && a.staffId === staff.id,
+    ),
+    settings: {
+      ...db.settings,
+      upiId: undefined,
+      gstin: undefined,
+    },
+  };
 }

@@ -13,6 +13,7 @@ import {
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { nursePatients } from "@/lib/nurse-desk";
+import { nurseView } from "@/lib/scope";
 import { formatDate } from "@/lib/format";
 import { NursePatientsList } from "@/components/dashboard/NursePatientsList";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -27,7 +28,7 @@ export default async function NursePatientsPage({
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const rows = nursePatients(db, user);
   const sp = await Promise.resolve(searchParams || {});
   const focusRaw = typeof sp.focus === "string" ? sp.focus : "all";

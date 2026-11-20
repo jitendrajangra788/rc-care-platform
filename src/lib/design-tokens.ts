@@ -8,14 +8,14 @@ export const brand = {
 } as const;
 
 export const colors = {
-  primary: "#0F766E",
-  primaryDeep: "#0D5F59",
-  secondary: "#CCFBF1",
-  secondaryDeep: "#99F6E4",
-  background: "#F5F7FA",
+  primary: "#087F8C",
+  primaryDeep: "#066670",
+  secondary: "#DDF5EC",
+  secondaryDeep: "#B8EAD9",
+  background: "#F7FAF9",
   surface: "#FFFFFF",
-  surfaceMuted: "#EEF2F6",
-  heading: "#0F172A",
+  surfaceMuted: "#EEF6F3",
+  heading: "#172D3A",
   muted: "#64748B",
   accent: "#EA580C",
   accentDeep: "#C2410C",

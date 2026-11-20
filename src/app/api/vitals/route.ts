@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/api-guard";
 import { readDb, writeDb } from "@/lib/db";
-import { patientIdsForUser } from "@/lib/scope";
+import { normalizeRole } from "@/lib/permissions";
+import { dutiesForStaff, patientIdsForUser, redactNursePatient, staffForUser } from "@/lib/scope";
 import type { VitalRecord } from "@/lib/types";
 import { parseBody, vitalSchema } from "@/lib/validation";
 
@@ -13,7 +14,15 @@ export async function GET(req: Request) {
   const allowed = patientIdsForUser(db, auth.user);
   let vitals = (db.vitals || []).filter((v) => allowed.has(v.patientId));
   if (patientId) vitals = vitals.filter((v) => v.patientId === patientId);
-  return NextResponse.json({ vitals, patients: db.patients || [] });
+  let patients = (db.patients || []).filter((p) => allowed.has(p.id));
+  if (normalizeRole(auth.user.role) === "nurse") {
+    const duties = dutiesForStaff(db, staffForUser(db, auth.user));
+    patients = patients.map((p) => {
+      const duty = duties.find((d) => d.patientId === p.id);
+      return redactNursePatient(p, duty?.id);
+    });
+  }
+  return NextResponse.json({ vitals, patients });
 }
 
 export async function POST(req: Request) {

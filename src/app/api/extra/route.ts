@@ -36,16 +36,38 @@ export async function GET(req: Request) {
     });
   }
   if (resource === "sos") {
-    if (session.role === "admin" || session.role === "nurse") {
+    const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
+    const { dutiesForStaff, dutyLabel, staffForUser } = await import("@/lib/scope");
+    const role = normalizeRole(session.role);
+    if (isStaffOpsRole(role)) {
       return NextResponse.json({ sosAlerts: db.sosAlerts });
+    }
+    if (role === "nurse") {
+      const dutyIds = new Set(dutiesForStaff(db, staffForUser(db, session)).map((b) => b.id));
+      return NextResponse.json({
+        sosAlerts: (db.sosAlerts || [])
+          .filter((s) => dutyIds.has(s.bookingId) || s.raisedByUserId === session.id)
+          .map((s) => ({ ...s, patientName: dutyLabel(s.bookingId) })),
+      });
     }
     return NextResponse.json({
       sosAlerts: db.sosAlerts.filter((s) => s.raisedByUserId === session.id),
     });
   }
   if (resource === "med-schedule") {
-    if (session.role === "admin" || session.role === "nurse") {
+    const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
+    const { dutiesForStaff, dutyLabel, staffForUser } = await import("@/lib/scope");
+    const role = normalizeRole(session.role);
+    if (isStaffOpsRole(role)) {
       return NextResponse.json({ medSchedules: db.medSchedules });
+    }
+    if (role === "nurse") {
+      const dutyIds = new Set(dutiesForStaff(db, staffForUser(db, session)).map((b) => b.id));
+      return NextResponse.json({
+        medSchedules: (db.medSchedules || [])
+          .filter((m) => dutyIds.has(m.bookingId))
+          .map((m) => ({ ...m, patientName: dutyLabel(m.bookingId) })),
+      });
     }
     const ids = new Set(db.bookings.filter((b) => b.familyUserId === session.id).map((b) => b.id));
     return NextResponse.json({
@@ -63,8 +85,13 @@ export async function GET(req: Request) {
     });
   }
   if (resource === "doctor-notes") {
-    if (session.role === "admin" || session.role === "nurse") {
+    const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
+    const role = normalizeRole(session.role);
+    if (isStaffOpsRole(role)) {
       return NextResponse.json({ doctorNotes: db.doctorNotes });
+    }
+    if (role === "nurse") {
+      return NextResponse.json({ doctorNotes: [] });
     }
     const ids = new Set(db.bookings.filter((b) => b.familyUserId === session.id).map((b) => b.id));
     return NextResponse.json({
@@ -72,9 +99,23 @@ export async function GET(req: Request) {
     });
   }
   if (resource === "call-logs") {
-    if (session.role === "family") {
+    const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
+    const { dutiesForStaff, dutyLabel, staffForUser } = await import("@/lib/scope");
+    const role = normalizeRole(session.role);
+    if (role === "family") {
       const ids = new Set(db.bookings.filter((b) => b.familyUserId === session.id).map((b) => b.id));
       return NextResponse.json({ callLogs: db.callLogs.filter((c) => ids.has(c.bookingId)) });
+    }
+    if (role === "nurse") {
+      const dutyIds = new Set(dutiesForStaff(db, staffForUser(db, session)).map((b) => b.id));
+      return NextResponse.json({
+        callLogs: (db.callLogs || [])
+          .filter((c) => dutyIds.has(c.bookingId))
+          .map((c) => ({ ...c, patientName: dutyLabel(c.bookingId) })),
+      });
+    }
+    if (!isStaffOpsRole(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     return NextResponse.json({ callLogs: db.callLogs });
   }
@@ -83,6 +124,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ auditLogs: db.auditLogs });
   }
   if (resource === "roster") {
+    const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
+    if (!isStaffOpsRole(normalizeRole(session.role))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     return NextResponse.json({
       bookings: db.bookings.filter((b) => b.status === "active" || b.status === "assigned"),
       staff: db.staff,

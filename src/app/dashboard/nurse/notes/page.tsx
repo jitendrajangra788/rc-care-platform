@@ -3,6 +3,7 @@ import { ClipboardList, FileText, NotebookPen } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { buildNurseDesk } from "@/lib/nurse-desk";
+import { nurseView } from "@/lib/scope";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Panel } from "@/components/dashboard/DashboardShell";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -13,7 +14,7 @@ export default async function NurseNotesPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const desk = buildNurseDesk(db, user);
   const notes = desk.notes.map((n) => {
     const booking = db.bookings.find((b) => b.id === n.bookingId);

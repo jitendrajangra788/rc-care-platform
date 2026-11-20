@@ -25,7 +25,7 @@ import type {
   Patient,
   VitalRecord,
 } from "@/lib/types";
-import { formatDate, formatDateTime, formatPhone } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { usePagedList } from "@/hooks/usePagedList";
 import { NurseCompleteReportForm } from "@/components/dashboard/NurseCompleteReportForm";
@@ -114,10 +114,8 @@ export function NursePatientChart({
                 {patient.name}
               </h1>
               <p className="mt-1 text-sm text-white/80">
-                {formatPhone(patient.phone)}
-                {patient.age ? ` · ${patient.age}y` : ""}
-                {patient.gender ? ` · ${patient.gender}` : ""}
-                {patient.area ? ` · ${patient.area}` : ""}
+                {[patient.area, active?.shift, active?.startDate].filter(Boolean).join(" · ") ||
+                  "Assigned duty"}
               </p>
               {patient.address ? (
                 <p className="mt-1 line-clamp-2 text-sm text-white/70">{patient.address}</p>
@@ -219,13 +217,12 @@ export function NursePatientChart({
               </div>
             )}
           </Panel>
-          <Panel title="Emergency information" subtitle="From patient record">
+          <Panel title="Duty location" subtitle="What you need on site">
             <dl className="grid gap-2 text-sm">
-              <Field label="Primary phone" value={formatPhone(patient.phone)} />
-              <Field label="Address" value={patient.address || patient.area || "—"} />
+              <Field label="Address" value={patient.address || patient.area || active?.address || "—"} />
               <Field
-                label="Care / emergency notes"
-                value={patient.notes || active?.notes || "No emergency notes on file."}
+                label="Care instructions"
+                value={active?.notes || "No care instructions on this duty."}
               />
             </dl>
           </Panel>
@@ -274,18 +271,14 @@ export function NursePatientChart({
       ) : null}
 
       {tab === "personal" ? (
-        <Panel title="Personal information" subtitle="Demographics on file">
+        <Panel title="Assignment" subtitle="Duty details for this shift">
           <dl className="grid gap-2 text-sm sm:grid-cols-2">
-            <Field label="Patient ID" value={patient.id} />
-            <Field label="Full name" value={patient.name} />
-            <Field label="Phone" value={formatPhone(patient.phone)} />
-            <Field label="Age" value={patient.age != null ? String(patient.age) : "—"} />
-            <Field label="Gender" value={patient.gender || "—"} />
+            <Field label="Duty" value={patient.name} />
             <Field label="Status" value={patient.status || "active"} />
             <Field label="Area" value={patient.area || "—"} />
             <Field label="Address" value={patient.address || "—"} />
-            <Field label="Notes" value={patient.notes || "—"} />
-            <Field label="Registered" value={formatDate(patient.createdAt)} />
+            <Field label="Shift" value={active ? `${active.shift} · ${active.startDate}` : "—"} />
+            <Field label="Care instructions" value={active?.notes || "—"} />
           </dl>
         </Panel>
       ) : null}

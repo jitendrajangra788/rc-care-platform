@@ -1,22 +1,25 @@
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   AlertTriangle,
   ArrowUpRight,
   CalendarDays,
   ClipboardList,
+  HeartPulse,
   MapPinned,
   Receipt,
   Users,
 } from "lucide-react";
+import { getSession } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { todayDutyDate } from "@/lib/duty";
 import { formatCurrency } from "@/lib/format";
 import { dailyWorkload } from "@/lib/schedule";
-import {
-  AdminCharts,
-  type FunnelPoint,
-  type RevenuePoint,
-} from "@/components/dashboard/AdminCharts";
+import type { FunnelPoint, RevenuePoint } from "@/components/dashboard/AdminCharts";
+
+const AdminCharts = dynamic(() =>
+  import("@/components/dashboard/AdminCharts").then((mod) => mod.AdminCharts),
+);
 import { Panel } from "@/components/dashboard/DashboardShell";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -75,8 +78,16 @@ function buildRevenueSeries(
 }
 
 export default async function AdminDashboardPage() {
+  const session = await getSession();
   const db = await readDb();
   const today = todayDutyDate();
+  const totalPatients = (db.patients || []).filter((p) => p.status !== "inactive").length;
+  const deskDate = new Date(`${today}T12:00:00`).toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const totalBookings = db.bookings.length;
   const active = db.bookings.filter((b) => b.status === "active").length;
@@ -194,8 +205,8 @@ export default async function AdminDashboardPage() {
     <div className="dash-stack !gap-1.5 md:!gap-2">
       <PageHeader
         eyebrow="Admin"
-        title="Care desk"
-        subtitle="Bookings, staff, collections, and alerts."
+        title={session?.name ? `Welcome, ${session.name.split(" ")[0]}` : "Welcome back"}
+        subtitle={`${deskDate} · ${totalPatients} patients · ${todayActiveDuties.length} ${todayActiveDuties.length === 1 ? "duty" : "duties"} today`}
         action={
           <div className="flex flex-wrap items-center gap-1.5">
             <Link href="/dashboard/admin/schedule" className="btn btn-outline btn-sm hidden sm:inline-flex">
@@ -223,6 +234,13 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="dash-grid-stats cols-4">
+        <StatCard
+          label="Patients"
+          value={String(totalPatients)}
+          hint={`${totalBookings} bookings on file`}
+          tone="primary"
+          icon={<HeartPulse className="h-3.5 w-3.5" />}
+        />
         <StatCard
           label="Today's duties"
           value={String(todayActiveDuties.length)}

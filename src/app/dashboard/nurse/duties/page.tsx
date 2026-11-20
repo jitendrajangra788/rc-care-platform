@@ -3,6 +3,7 @@ import { MapPinned } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { buildNurseDesk } from "@/lib/nurse-desk";
+import { nurseView } from "@/lib/scope";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { NurseDutiesBoard } from "@/components/dashboard/NurseDutiesBoard";
@@ -14,7 +15,7 @@ export default async function NurseDutiesPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const desk = buildNurseDesk(db, user);
 
   return (

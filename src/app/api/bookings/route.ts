@@ -196,8 +196,15 @@ export async function GET() {
   const { bookingsForUser } = await import("@/lib/scope");
   const { isStaffOpsRole, normalizeRole } = await import("@/lib/permissions");
   const bookings = bookingsForUser(db, session);
-  if (isStaffOpsRole(normalizeRole(session.role))) {
+  const role = normalizeRole(session.role);
+  if (isStaffOpsRole(role)) {
     return NextResponse.json({ bookings, staff: db.staff });
+  }
+  if (role === "nurse") {
+    const { redactNurseBooking } = await import("@/lib/scope");
+    return NextResponse.json({
+      bookings: bookings.map(redactNurseBooking),
+    });
   }
   return NextResponse.json({ bookings });
 }

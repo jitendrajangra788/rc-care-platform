@@ -23,9 +23,12 @@ export async function GET() {
   }
 
   if (session.role === "nurse") {
+    const { dutyLabel } = await import("@/lib/scope");
     const staff = db.staff.find((s) => s.userId === session.id || s.name === session.name);
     return NextResponse.json({
-      payouts: (db.salaryPayouts || []).filter((p) => p.staffId === staff?.id),
+      payouts: (db.salaryPayouts || [])
+        .filter((p) => p.staffId === staff?.id)
+        .map((p) => ({ ...p, patientName: dutyLabel(p.bookingId) })),
       staff: staff
         ? [
             {

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/api-guard";
 import { readDb, saveDataUrlImage, writeDb } from "@/lib/db";
-import { patientIdsForUser } from "@/lib/scope";
+import { normalizeRole } from "@/lib/permissions";
+import { dutiesForStaff, patientIdsForUser, redactNursePatient, staffForUser } from "@/lib/scope";
 import type { CareReport } from "@/lib/types";
 import { z } from "zod";
 import { parseBody } from "@/lib/validation";
@@ -27,8 +28,21 @@ export async function GET() {
   if ("error" in auth) return auth.error;
   const db = await readDb();
   const allowed = patientIdsForUser(db, auth.user);
-  const careReports = (db.careReports || []).filter((r) => allowed.has(r.patientId));
-  return NextResponse.json({ careReports, patients: db.patients || [] });
+  let careReports = (db.careReports || []).filter((r) => allowed.has(r.patientId));
+  let patients = (db.patients || []).filter((p) => allowed.has(p.id));
+  if (normalizeRole(auth.user.role) === "nurse") {
+    const duties = dutiesForStaff(db, staffForUser(db, auth.user));
+    patients = patients.map((p) => {
+      const duty = duties.find((d) => d.patientId === p.id);
+      return redactNursePatient(p, duty?.id);
+    });
+    careReports = careReports.map((r) => ({
+      ...r,
+      attachmentUrl: undefined,
+      attachmentName: undefined,
+    }));
+  }
+  return NextResponse.json({ careReports, patients });
 }
 
 export async function POST(req: Request) {

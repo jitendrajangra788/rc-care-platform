@@ -1,7 +1,7 @@
 import { Activity, HeartPulse, UserRound } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { patientIdsForUser } from "@/lib/scope";
+import { nurseView, patientIdsForUser } from "@/lib/scope";
 import { todayDutyDate } from "@/lib/duty";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { VitalsPanel } from "@/components/care/VitalsPanel";
@@ -12,7 +12,7 @@ export default async function NurseVitalsPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const allowed = patientIdsForUser(db, user);
   const patients = (db.patients || []).filter((p) => allowed.has(p.id));
   const vitals = (db.vitals || []).filter((v) => allowed.has(v.patientId));

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { staffForUser } from "@/lib/scope";
+import { nurseView, staffForUser } from "@/lib/scope";
 import { formatINR } from "@/lib/utils";
 import { SalarySlipPrint } from "@/components/dashboard/SalarySlipPrint";
 
@@ -16,7 +16,7 @@ export default async function NurseSalarySlipPage({
   const user = await getSession();
   if (!user) return null;
   const { id } = await params;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const staff = staffForUser(db, user);
   const salary = (db.monthlySalaries || []).find((s) => s.id === id);
   if (!salary || !staff || salary.staffId !== staff.id) notFound();

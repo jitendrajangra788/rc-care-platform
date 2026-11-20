@@ -3,7 +3,8 @@ import { pushActivity } from "@/lib/activity";
 import { requirePermission } from "@/lib/api-guard";
 import { pushAudit } from "@/lib/audit";
 import { readDb, writeDb } from "@/lib/db";
-import { patientIdsForUser } from "@/lib/scope";
+import { normalizeRole } from "@/lib/permissions";
+import { patientIdsForUser, redactNursePatient, dutiesForStaff, staffForUser } from "@/lib/scope";
 import type { Patient } from "@/lib/types";
 import { parseBody, patientSchema } from "@/lib/validation";
 
@@ -12,7 +13,14 @@ export async function GET() {
   if ("error" in auth) return auth.error;
   const db = await readDb();
   const allowed = patientIdsForUser(db, auth.user);
-  const patients = (db.patients || []).filter((p) => allowed.has(p.id));
+  let patients = (db.patients || []).filter((p) => allowed.has(p.id));
+  if (normalizeRole(auth.user.role) === "nurse") {
+    const duties = dutiesForStaff(db, staffForUser(db, auth.user));
+    patients = patients.map((p) => {
+      const duty = duties.find((d) => d.patientId === p.id);
+      return redactNursePatient(p, duty?.id);
+    });
+  }
   return NextResponse.json({ patients });
 }
 

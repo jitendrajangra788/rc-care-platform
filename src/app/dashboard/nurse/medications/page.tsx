@@ -2,7 +2,7 @@ import { Syringe, ClipboardList, Pill } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { buildNurseDesk } from "@/lib/nurse-desk";
-import { medicationsForUser } from "@/lib/scope";
+import { medicationsForUser, nurseView } from "@/lib/scope";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { MedicationPanel } from "@/components/dashboard/MedicationPanel";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -12,7 +12,7 @@ export default async function NurseMedicationsPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const desk = buildNurseDesk(db, user);
   // Only this nurse's MAR entries — never other nurses' chart lines
   const logs = medicationsForUser(db, user);

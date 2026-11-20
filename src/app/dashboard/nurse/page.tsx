@@ -1,6 +1,7 @@
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { buildNurseDesk, nursePatients } from "@/lib/nurse-desk";
+import { nurseView } from "@/lib/scope";
 import { NurseOverviewDashboard } from "@/components/dashboard/NurseOverviewDashboard";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
 
@@ -8,7 +9,7 @@ export default async function NurseOverviewPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const desk = buildNurseDesk(db, user);
   const patients = nursePatients(db, user);
   const notifications = (db.activities || [])

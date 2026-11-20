@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FileText, Upload, UserRound } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { patientIdsForUser } from "@/lib/scope";
+import { nurseView, patientIdsForUser } from "@/lib/scope";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
 import { NurseReportsHub } from "@/components/dashboard/NurseReportsHub";
@@ -12,7 +12,7 @@ export default async function NurseReportsPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const allowed = patientIdsForUser(db, user);
   const patients = (db.patients || []).filter((p) => allowed.has(p.id));
   const reports = (db.careReports || [])

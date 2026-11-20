@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Noto_Sans_Devanagari } from "next/font/google";
+import { Fraunces, Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { WhatsAppFab } from "@/components/marketing/WhatsAppFab";
 import { ToastHost } from "@/components/ui/toast";
 import { LocaleProvider } from "@/lib/i18n";
@@ -11,9 +11,15 @@ const display = Fraunces({
   weight: ["500", "600", "700"],
 });
 
-const noto = Noto_Sans_Devanagari({
+const inter = Inter({
   variable: "--font-body",
-  subsets: ["latin", "devanagari"],
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const noto = Noto_Sans_Devanagari({
+  variable: "--font-devanagari",
+  subsets: ["devanagari"],
   weight: ["400", "500", "600", "700"],
 });
 
@@ -45,7 +51,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${noto.variable} h-full antialiased`}>
+    <html lang="en" className={`${display.variable} ${inter.variable} ${noto.variable} h-full antialiased`}>
       <body className="site-bg flex min-h-full flex-col font-sans">
         <LocaleProvider>
           {children}

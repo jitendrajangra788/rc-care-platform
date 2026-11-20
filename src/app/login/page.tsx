@@ -18,6 +18,16 @@ import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 const showDemos = process.env.NEXT_PUBLIC_DEMO_LOGINS !== "false";
+const REMEMBER_KEY = "rc-login-id";
+
+function identifierLooksValid(value: string) {
+  const v = value.trim();
+  if (!v) return false;
+  if (v.includes("@")) return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  const digits = v.replace(/\D/g, "");
+  const local = digits.length > 10 ? digits.slice(-10) : digits;
+  return local.length === 10 && /^[6-9]/.test(local);
+}
 
 const demos = [
   {
@@ -74,9 +84,25 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem(REMEMBER_KEY);
+        if (!saved) return;
+        setEmail(saved);
+        setRemember(true);
+      } catch {
+        /* private mode */
+      }
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   async function loginWith(nextEmail: string, nextPassword: string, demoRole?: string) {
     if (busy.current) return;
@@ -109,6 +135,12 @@ export default function LoginPage() {
       }
 
       toast.success("Welcome back", data.user?.name || "Signed in");
+      try {
+        if (remember) window.localStorage.setItem(REMEMBER_KEY, nextEmail);
+        else window.localStorage.removeItem(REMEMBER_KEY);
+      } catch {
+        /* private mode */
+      }
       // Full navigation so session cookie + role dashboard assign reliably
       const dest = String(data.redirectTo || "/dashboard");
       window.location.assign(dest);
@@ -126,7 +158,16 @@ export default function LoginPage() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    void loginWith(email.trim(), password);
+    const id = email.trim();
+    if (!identifierLooksValid(id)) {
+      setError("Enter a valid email or 10-digit mobile number.");
+      return;
+    }
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
+    void loginWith(id, password);
   }
 
   return (
@@ -193,14 +234,32 @@ export default function LoginPage() {
               </div>
 
               <h1 className="font-display text-[1.55rem] leading-none tracking-[-0.035em] text-heading sm:text-[1.85rem]">
-                Welcome back
+                {forgot ? "Reset access" : "Welcome back"}
               </h1>
-              <p className="mt-1 text-[13px] text-muted">Sign in to your care desk.</p>
+              <p className="mt-1 text-[13px] text-muted">
+                {forgot
+                  ? "The care desk verifies your account before a password is changed."
+                  : "Sign in with your work email or registered mobile."}
+              </p>
 
+              {forgot ? (
+                <div className="mt-4 space-y-2.5">
+                  <a href="tel:+917073231360" className="btn btn-primary h-10 w-full !rounded-[0.85rem] !text-sm">
+                    <Phone className="h-4 w-4" /> Call 70732 31360
+                  </a>
+                  <button
+                    type="button"
+                    className="btn btn-outline h-10 w-full !rounded-[0.85rem] !text-sm"
+                    onClick={() => setForgot(false)}
+                  >
+                    Back to sign in
+                  </button>
+                </div>
+              ) : (
               <form onSubmit={onSubmit} className="mt-3.5 space-y-2.5 sm:mt-4 sm:space-y-3">
                 <div>
                   <label htmlFor={emailId} className="mb-1 block text-[13px] font-semibold text-heading">
-                    Email
+                    Email or mobile
                   </label>
                   <div className="relative">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -209,9 +268,10 @@ export default function LoginPage() {
                       className="field field-with-icon !h-10 !rounded-[0.85rem] !py-0 text-[15px]"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      type="email"
+                      type="text"
+                      inputMode="email"
                       autoComplete="username"
-                      placeholder="you@roshancare.in"
+                      placeholder="you@roshancare.in or 10-digit mobile"
                       required
                     />
                   </div>
@@ -222,12 +282,13 @@ export default function LoginPage() {
                     <label htmlFor={passwordId} className="text-[13px] font-semibold text-heading">
                       Password
                     </label>
-                    <a
-                      href="tel:+917073231360"
+                    <button
+                      type="button"
+                      onClick={() => setForgot(true)}
                       className="text-[12px] font-semibold text-primary hover:text-[var(--primary-deep)]"
                     >
                       Forgot?
-                    </a>
+                    </button>
                   </div>
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -252,6 +313,16 @@ export default function LoginPage() {
                   </div>
                 </div>
 
+                <label className="flex items-center gap-2 text-[13px] font-medium text-heading">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-[var(--line)] accent-[var(--primary)]"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
+                  Remember me on this device
+                </label>
+
                 {error ? (
                   <p
                     role="alert"
@@ -273,14 +344,15 @@ export default function LoginPage() {
                     </>
                   ) : (
                     <>
-                      Log In
+                      Secure login
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
               </form>
+              )}
 
-              {showDemos ? (
+              {showDemos && !forgot ? (
                 <div className="mt-3 border-t border-[var(--line)] pt-3 sm:mt-4 sm:pt-3.5">
                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
                     Quick demo

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/api-guard";
 import { pushAudit } from "@/lib/audit";
 import { readDb, writeDb } from "@/lib/db";
-import { patientIdsForUser } from "@/lib/scope";
+import { normalizeRole } from "@/lib/permissions";
+import { dutiesForStaff, patientIdsForUser, redactNursePatient, staffForUser } from "@/lib/scope";
 import type { CarePlan } from "@/lib/types";
 import { carePlanSchema, parseBody } from "@/lib/validation";
 
@@ -12,7 +13,15 @@ export async function GET() {
   const db = await readDb();
   const allowed = patientIdsForUser(db, auth.user);
   const carePlans = (db.carePlans || []).filter((p) => allowed.has(p.patientId));
-  return NextResponse.json({ carePlans, patients: db.patients || [] });
+  let patients = (db.patients || []).filter((p) => allowed.has(p.id));
+  if (normalizeRole(auth.user.role) === "nurse") {
+    const duties = dutiesForStaff(db, staffForUser(db, auth.user));
+    patients = patients.map((p) => {
+      const duty = duties.find((d) => d.patientId === p.id);
+      return redactNursePatient(p, duty?.id);
+    });
+  }
+  return NextResponse.json({ carePlans, patients });
 }
 
 export async function POST(req: Request) {

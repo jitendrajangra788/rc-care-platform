@@ -102,7 +102,7 @@ export async function GET(req: Request) {
       }).map((c) => ({ bookingId: b.id, staffId: b.assignedStaffId, ...c })),
     );
 
-  return NextResponse.json({
+  const payload = {
     mode,
     date: format(anchor, "yyyy-MM-dd"),
     from: fromISO,
@@ -116,7 +116,23 @@ export async function GET(req: Request) {
     workloadByDay,
     conflicts: conflictPreview,
     asOf,
-  });
+  };
+
+  if (role === "nurse") {
+    const { redactNurseBooking, staffForUser } = await import("@/lib/scope");
+    const staff = staffForUser(db, session);
+    return NextResponse.json({
+      ...payload,
+      bookings: bookings.map(redactNurseBooking),
+      staff: staff ? [staff] : [],
+      leaves: (db.leaves || []).filter((l) => staff && l.staffId === staff.id),
+      availability: (db.nurseAvailability || []).filter((a) => staff && a.staffId === staff.id),
+      nurseBoard: nurseBoard.filter((n) => staff && n.staff.id === staff.id),
+      conflicts: [],
+    });
+  }
+
+  return NextResponse.json(payload);
 }
 
 export async function POST(req: Request) {

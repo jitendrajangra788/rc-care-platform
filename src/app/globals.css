@@ -7,21 +7,21 @@
 */
 
 :root {
-  /* Brand core — HIS clinical teal */
-  --primary: #0f766e;
-  --primary-deep: #0d5f59;
-  --primary-soft: rgba(15, 118, 110, 0.12);
-  --secondary: #ccfbf1;
-  --secondary-deep: #99f6e4;
+  /* Brand core — hospital teal */
+  --primary: #087f8c;
+  --primary-deep: #066670;
+  --primary-soft: rgba(8, 127, 140, 0.12);
+  --secondary: #ddf5ec;
+  --secondary-deep: #b8ead9;
   --accent: #ea580c;
   --accent-deep: #c2410c;
   --accent-soft: rgba(234, 88, 12, 0.14);
 
   /* Surfaces */
-  --bg: #f5f7fa;
+  --bg: #f7faf9;
   --surface: #ffffff;
-  --surface-muted: #eef2f6;
-  --heading: #0f172a;
+  --surface-muted: #eef6f3;
+  --heading: #172d3a;
   --muted: #64748b;
   --line: rgba(15, 23, 42, 0.1);
   --line-strong: rgba(15, 23, 42, 0.16);
@@ -105,7 +105,7 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --font-display: var(--font-display);
-  --font-sans: var(--font-body);
+  --font-sans: var(--font-body), var(--font-devanagari), "Segoe UI", system-ui, sans-serif;
 }
 
 * {
@@ -127,7 +127,7 @@ body {
   overflow-x: hidden;
   background: var(--bg);
   color: var(--heading);
-  font-family: var(--font-body), "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-devanagari), "Segoe UI", system-ui, sans-serif;
   font-feature-settings: "ss01" on, "cv11" on;
   letter-spacing: -0.011em;
   text-rendering: optimizeLegibility;
@@ -150,7 +150,7 @@ body {
 }
 
 .font-name {
-  font-family: var(--font-body), "Noto Sans Devanagari", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-body), var(--font-devanagari), "Noto Sans Devanagari", "Segoe UI", system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;

@@ -45,15 +45,19 @@ export async function GET() {
     });
   }
   if (session.role === "nurse") {
-    const { attendanceForStaff, dutiesForStaff, staffForUser } = await import("@/lib/scope");
+    const { attendanceForStaff, dutiesForStaff, dutyLabel, staffForUser } = await import(
+      "@/lib/scope"
+    );
     const staff = staffForUser(db, session);
     const myDuties = dutiesForStaff(db, staff);
     return NextResponse.json({
       attendance: attendanceForStaff(db, staff, session),
-      salaryPayouts: (db.salaryPayouts || []).filter((p) => staff && p.staffId === staff.id),
+      salaryPayouts: (db.salaryPayouts || [])
+        .filter((p) => staff && p.staffId === staff.id)
+        .map((p) => ({ ...p, patientName: dutyLabel(p.bookingId) })),
       bookings: myDuties.map((b) => ({
         id: b.id,
-        patientName: b.patientName,
+        patientName: dutyLabel(b.id),
         lat: b.lat,
         lng: b.lng,
         geofenceRadiusM: b.geofenceRadiusM,

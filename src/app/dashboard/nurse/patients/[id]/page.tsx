@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, FileText } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { patientIdsForUser, staffForUser } from "@/lib/scope";
-import { formatPhone } from "@/lib/format";
+import { nurseView, patientIdsForUser, staffForUser } from "@/lib/scope";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
 import { NursePatientChart } from "@/components/dashboard/NursePatientChart";
@@ -22,7 +21,7 @@ export default async function NursePatientDetailPage({
   const { id } = await Promise.resolve(params);
   const sp = await Promise.resolve(searchParams || {});
   const initialTab = typeof sp.tab === "string" ? sp.tab : undefined;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const allowed = patientIdsForUser(db, user);
   if (!allowed.has(id)) notFound();
 
@@ -64,7 +63,7 @@ export default async function NursePatientDetailPage({
         <PageHeader
           eyebrow="Clinical chart · Assigned care only"
           title={patient.name}
-          subtitle={`${formatPhone(patient.phone)}${patient.area ? ` · ${patient.area}` : ""} · hospital workstation`}
+          subtitle={[patient.area, active?.shift, active?.address].filter(Boolean).join(" · ") || "Assigned duty"}
         />
         <div className="flex flex-wrap gap-2">
           <Link href="/dashboard/nurse/reports" className="btn btn-outline btn-sm">

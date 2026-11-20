@@ -7,7 +7,7 @@ import {
   recordMatches,
   type SearchHit,
 } from "@/lib/search";
-import { bookingsForUser, patientIdsForUser, staffForUser } from "@/lib/scope";
+import { bookingsForUser, dutyLabel, patientIdsForUser, staffForUser } from "@/lib/scope";
 
 export async function GET(req: Request) {
   const session = await getSession();
@@ -25,12 +25,9 @@ export async function GET(req: Request) {
   const allowedBookings = bookingsForUser(db, session);
 
   for (const p of db.patients || []) {
+    if (role === "nurse") continue;
     if (!ops && !allowedPatientIds.has(p.id)) continue;
-    const href = ops
-      ? `/dashboard/admin/patients/${p.id}`
-      : role === "nurse"
-        ? `/dashboard/nurse/patients/${p.id}`
-        : `/dashboard/family`;
+    const href = ops ? `/dashboard/admin/patients/${p.id}` : `/dashboard/family`;
     catalog.push({
       id: p.id,
       type: "patient",
@@ -49,6 +46,17 @@ export async function GET(req: Request) {
       : role === "nurse"
         ? `/dashboard/nurse/duties`
         : `/dashboard/family`;
+    if (role === "nurse") {
+      catalog.push({
+        id: b.id,
+        type: "booking",
+        title: dutyLabel(b.id),
+        subtitle: [b.careType, b.shift, b.status, b.area].filter(Boolean).join(" · "),
+        href,
+        keywords: [b.id, b.area, b.careType, b.status, b.shift].filter(Boolean).join(" "),
+      });
+      continue;
+    }
     catalog.push({
       id: b.id,
       type: "booking",
@@ -120,9 +128,9 @@ export async function GET(req: Request) {
         id: me.id,
         type: "staff",
         title: me.name,
-        subtitle: [me.role, me.phone].filter(Boolean).join(" · "),
+        subtitle: me.role,
         href: `/dashboard/nurse/profile`,
-        keywords: [me.name, me.phone, me.id, me.email].filter(Boolean).join(" "),
+        keywords: [me.name, me.id].filter(Boolean).join(" "),
       });
     }
   }

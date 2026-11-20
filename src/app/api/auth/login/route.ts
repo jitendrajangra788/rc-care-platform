@@ -9,6 +9,13 @@ import { signSession } from "@/lib/session-token";
 
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
+function phonesMatch(input: string, phone?: string) {
+  const a = input.replace(/\D/g, "");
+  const b = String(phone || "").replace(/\D/g, "");
+  if (a.length < 10 || b.length < 10) return false;
+  return a.slice(-10) === b.slice(-10);
+}
+
 function rateLimit(key: string) {
   const now = Date.now();
   const row = attempts.get(key);
@@ -27,12 +34,11 @@ export async function POST(req: Request) {
       password?: string;
     } | null;
 
-    const email = String(json?.email || "")
-      .trim()
-      .toLowerCase();
+    const rawId = String(json?.email || "").trim();
+    const email = rawId.toLowerCase();
     const password = String(json?.password ?? "");
 
-    if (!email || !password) {
+    if (!rawId || !password) {
       return NextResponse.json({ error: "Email and password required" }, { status: 400 });
     }
 
@@ -43,7 +49,11 @@ export async function POST(req: Request) {
     }
 
     const db = await readDb();
-    const user = db.users.find((u) => u.email.toLowerCase() === email);
+    const user = db.users.find((u) => {
+      if (u.email.toLowerCase() === email) return true;
+      if (email.includes("@")) return false;
+      return phonesMatch(rawId, u.phone);
+    });
     if (!user || user.active === false || !verifyPassword(password, user.password)) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }

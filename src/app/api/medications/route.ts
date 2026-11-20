@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { pushActivity } from "@/lib/activity";
 import { readDb, saveDataUrlImage, writeDb } from "@/lib/db";
 import { isStaffOpsRole, normalizeRole } from "@/lib/permissions";
-import { medicationsForUser, staffForUser } from "@/lib/scope";
+import { dutyLabel, medicationsForUser, staffForUser } from "@/lib/scope";
 import type { MedicationLog, MedicationType } from "@/lib/types";
 
 export async function GET() {
@@ -11,9 +11,18 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = await readDb();
+  const role = normalizeRole(session.role);
+  let medications = medicationsForUser(db, session);
+  if (role === "nurse") {
+    medications = medications.map((m) => ({
+      ...m,
+      patientName: dutyLabel(m.bookingId),
+      photoUrl: undefined,
+    }));
+  }
   return NextResponse.json({
-    medications: medicationsForUser(db, session),
-    scope: isStaffOpsRole(normalizeRole(session.role)) ? "all" : "own",
+    medications,
+    scope: isStaffOpsRole(role) ? "all" : "own",
   });
 }
 

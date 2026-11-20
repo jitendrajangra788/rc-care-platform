@@ -8,6 +8,7 @@ import {
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 import { buildNurseDesk } from "@/lib/nurse-desk";
+import { nurseView } from "@/lib/scope";
 import { formatDate } from "@/lib/format";
 import { AttendancePanel } from "@/components/dashboard/AttendancePanel";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -18,7 +19,7 @@ export default async function NurseAttendancePage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const desk = buildNurseDesk(db, user);
 
   const dayName = new Date(`${desk.today}T12:00:00`).toLocaleDateString("en-IN", {

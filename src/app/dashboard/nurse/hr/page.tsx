@@ -1,7 +1,7 @@
 import { Award, CalendarCheck, Wallet } from "lucide-react";
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { staffForUser } from "@/lib/scope";
+import { nurseView, staffForUser } from "@/lib/scope";
 import { formatINR } from "@/lib/utils";
 import { computeStaffPerformance } from "@/lib/performance";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -13,7 +13,7 @@ export default async function NurseHrPage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const staff = staffForUser(db, user);
   const leaves = db.leaves.filter((l) => l.staffId === staff?.id);
   const documents = db.documents.filter((d) => d.staffId === staff?.id);

@@ -1,6 +1,6 @@
 import { getSession, requireRole } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { staffForUser } from "@/lib/scope";
+import { nurseView, staffForUser } from "@/lib/scope";
 import { ProfileEditor } from "@/components/dashboard/ProfileEditor";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { NurseMobileDock } from "@/components/dashboard/NurseMobileDock";
@@ -10,7 +10,7 @@ export default async function NurseProfilePage() {
   await requireRole("nurse");
   const user = await getSession();
   if (!user) return null;
-  const db = await readDb();
+  const db = nurseView(await readDb(), user);
   const staff = staffForUser(db, user);
 
   if (!staff) {

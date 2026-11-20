@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useId, useRef, useState } from "react";
-import { CalendarClock, Eye, EyeOff, LoaderCircle, MapPinned, Plus, ShieldCheck, Users } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, Globe, LoaderCircle, MapPinned, Plus, ShieldCheck, Users } from "lucide-react";
 import { toast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
 
-const showDemos = process.env.NEXT_PUBLIC_DEMO_LOGINS !== "false";
 const REMEMBER_KEY = "rc-login-id";
 
 function identifierLooksValid(value: string) {
@@ -17,37 +15,6 @@ function identifierLooksValid(value: string) {
   const local = digits.length > 10 ? digits.slice(-10) : digits;
   return local.length === 10 && /^[6-9]/.test(local);
 }
-
-const demos = [
-  {
-    role: "Admin",
-    email: "admin@roshancare.in",
-    password: "admin123",
-    dot: "bg-[#7c3aed]",
-    text: "text-[#7c3aed]",
-  },
-  {
-    role: "Coordinator",
-    email: "coord@roshancare.in",
-    password: "coord123",
-    dot: "bg-[#2563eb]",
-    text: "text-[#2563eb]",
-  },
-  {
-    role: "Nurse",
-    email: "9876500011",
-    password: "12345678",
-    dot: "bg-[#16a34a]",
-    text: "text-[#16a34a]",
-  },
-  {
-    role: "Family",
-    email: "family@roshancare.in",
-    password: "family123",
-    dot: "bg-[#ea580c]",
-    text: "text-[#ea580c]",
-  },
-] as const;
 
 export default function LoginPage() {
   const emailId = useId();
@@ -61,7 +28,6 @@ export default function LoginPage() {
   const [forgot, setForgot] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeDemo, setActiveDemo] = useState<string | null>(null);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -76,12 +42,11 @@ export default function LoginPage() {
     };
   }, []);
 
-  async function loginWith(nextEmail: string, nextPassword: string, demoRole?: string) {
+  async function loginWith(nextEmail: string, nextPassword: string) {
     if (busy.current) return;
     busy.current = true;
     setLoading(true);
     setError("");
-    if (demoRole) setActiveDemo(demoRole);
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 20000);
@@ -100,7 +65,6 @@ export default function LoginPage() {
         toast.error("Login failed", data.error || "Check mobile / password");
         busy.current = false;
         setLoading(false);
-        setActiveDemo(null);
         return;
       }
 
@@ -119,7 +83,6 @@ export default function LoginPage() {
       toast.error(aborted ? "Timed out" : "Network error", "Please try again");
       busy.current = false;
       setLoading(false);
-      setActiveDemo(null);
     } finally {
       window.clearTimeout(timer);
     }
@@ -140,7 +103,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="h-dvh overflow-hidden bg-[#f4f7fb] lg:grid lg:h-auto lg:min-h-dvh lg:grid-cols-2 lg:overflow-visible">
+    <div className="relative h-dvh overflow-hidden bg-[#f4f7fb] lg:grid lg:h-auto lg:min-h-dvh lg:grid-cols-2 lg:overflow-visible">
+      <Link
+        href="/"
+        aria-label="Public website"
+        className="absolute right-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d7e2ee] bg-white text-[#1d6fb8] shadow-sm sm:right-5 sm:top-5 sm:h-11 sm:w-11"
+      >
+        <Globe className="h-5 w-5" />
+      </Link>
       <aside className="relative hidden overflow-hidden bg-[#071a33] text-white lg:flex lg:flex-col lg:justify-between lg:px-14 lg:py-10">
         <div className="pointer-events-none absolute -left-24 top-[-8%] h-72 w-72 rounded-full bg-[#12325d]/80" />
         <div className="pointer-events-none absolute -right-16 top-[18%] h-80 w-80 rounded-full bg-[#0c2748]" />
@@ -306,7 +276,7 @@ export default function LoginPage() {
                   disabled={loading}
                   className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#1d6fb8] text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70"
                 >
-                  {loading && !activeDemo ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                  {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
                   Sign in
                 </button>
               </form>
@@ -319,39 +289,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-
-          {showDemos && !forgot ? (
-            <div className="mt-3 sm:mt-6">
-              <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#98a2b3]">
-                <span className="h-px flex-1 bg-[#e6ebf2]" />
-                Demo accounts
-                <span className="h-px flex-1 bg-[#e6ebf2]" />
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
-                {demos.map((d) => (
-                  <button
-                    key={d.role}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => void loginWith(d.email, d.password, d.role)}
-                    className={cn(
-                      "rounded-xl border bg-white px-2.5 py-2 text-left transition hover:border-[#c9d7ea] disabled:opacity-60 sm:px-3 sm:py-3",
-                      activeDemo === d.role ? "border-[#1d6fb8] ring-2 ring-[#1d6fb8]/15" : "border-[#e6ebf2]",
-                    )}
-                  >
-                    <span className="flex items-center gap-2 text-sm font-semibold">
-                      <span className={cn("h-2 w-2 rounded-full", d.dot)} />
-                      <span className={d.text}>{d.role}</span>
-                    </span>
-                    <span className="mt-0.5 block truncate pl-4 text-[11px] text-[#8b97a8] sm:text-xs">{d.email}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1.5 text-center text-[11px] text-[#98a2b3] sm:mt-3 sm:text-xs">
-                Tap a role to sign in. The form stays empty.
-              </p>
-            </div>
-          ) : null}
         </div>
       </section>
     </div>

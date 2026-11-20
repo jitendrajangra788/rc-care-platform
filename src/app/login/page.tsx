@@ -106,10 +106,10 @@ export default function LoginPage() {
     <div className="relative h-dvh overflow-hidden bg-[#f4f7fb] lg:grid lg:h-auto lg:min-h-dvh lg:grid-cols-2 lg:overflow-visible">
       <Link
         href="/"
-        aria-label="Public website"
-        className="absolute right-3 top-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d7e2ee] bg-white text-[#1d6fb8] shadow-sm sm:right-5 sm:top-5 sm:h-11 sm:w-11"
+        className="absolute right-3 top-3 z-30 inline-flex items-center gap-2 rounded-full border border-[#e4ebf2] bg-[#f7fafc] px-3.5 py-2 text-sm font-medium text-[#172d3a] shadow-sm sm:right-5 sm:top-5"
       >
-        <Globe className="h-5 w-5" />
+        <Globe className="h-4 w-4 text-[#5f6b7a]" />
+        Website
       </Link>
       <aside className="relative hidden overflow-hidden bg-[#071a33] text-white lg:flex lg:flex-col lg:justify-between lg:px-14 lg:py-10">
         <div className="pointer-events-none absolute -left-24 top-[-8%] h-72 w-72 rounded-full bg-[#12325d]/80" />

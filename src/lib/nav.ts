@@ -68,6 +68,25 @@ const adminNav: NavEntry[] = [
     ],
   },
   {
+    id: "enquiries",
+    label: "CRM & Enquiries",
+    icon: "leads",
+    children: [
+      {
+        href: "/dashboard/admin/home-care-requests",
+        label: "Home Care Requests",
+        icon: "request",
+        permission: "enquiries.read",
+      },
+      {
+        href: "/dashboard/admin/career-applications",
+        label: "Career Applications",
+        icon: "hr",
+        permission: "enquiries.read",
+      },
+    ],
+  },
+  {
     id: "operations",
     label: "Operations",
     icon: "operations",

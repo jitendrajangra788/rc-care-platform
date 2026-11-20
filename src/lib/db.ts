@@ -51,6 +51,8 @@ function ensureArrays(db: DbShape): DbShape {
   db.expenses = db.expenses || [];
   db.payments = db.payments || [];
   db.notifications = db.notifications || [];
+  db.homeCareRequests = db.homeCareRequests || [];
+  db.careerApplications = db.careerApplications || [];
   db.settings = { ...defaultSettings, ...(db.settings || {}) };
   db.staff = (db.staff || []).map((s) => ({
     ...s,
@@ -164,6 +166,8 @@ function mergeMigrated(parsed: DbShape): DbShape {
     expenses: parsed.expenses || seedDb.expenses || [],
     payments: parsed.payments || seedDb.payments || [],
     notifications: parsed.notifications || seedDb.notifications || [],
+    homeCareRequests: parsed.homeCareRequests || [],
+    careerApplications: parsed.careerApplications || [],
     settings: { ...defaultSettings, ...(parsed.settings || seedDb.settings || {}) },
   });
 

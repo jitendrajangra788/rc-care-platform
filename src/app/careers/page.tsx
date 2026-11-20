@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { PageHero } from "@/components/marketing/PageHero";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { Section, SectionHeading } from "@/components/ui/Section";
@@ -57,6 +58,9 @@ export default function CareersPage() {
               title="Apply in minutes"
               subtitle="Share your role and experience. We will call for document verification."
             />
+            <Link href="/careers/apply" className="btn btn-primary mt-6 inline-flex">
+              Apply for a Job
+            </Link>
             <ul className="mt-8 space-y-3 text-sm text-muted">
               <li>• Verified duty workflow with GPS attendance</li>
               <li>• Clear per-shift payouts on the payroll desk</li>

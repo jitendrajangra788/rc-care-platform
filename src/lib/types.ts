@@ -471,6 +471,137 @@ export type AuditLog = {
   createdAt: string;
 };
 
+export type StoredDocument = {
+  id: string;
+  label: string;
+  originalName: string;
+  storedName: string;
+  mime: string;
+  size: number;
+  storage: "data" | "tmp";
+};
+
+export type DocumentMeta = Pick<StoredDocument, "id" | "label" | "originalName" | "mime" | "size">;
+
+export type RecordHistory = {
+  at: string;
+  action: string;
+  actorId?: string;
+  actorName?: string;
+  from?: string;
+  to?: string;
+  note?: string;
+};
+
+export type HomeCareRequestStatus =
+  | "new"
+  | "contacted"
+  | "assessment_scheduled"
+  | "quotation_sent"
+  | "confirmed"
+  | "converted"
+  | "rejected"
+  | "cancelled";
+
+export type HomeCareDuty =
+  | "8 Hours"
+  | "12 Hours"
+  | "24 Hours"
+  | "Short Term"
+  | "Long Term";
+
+export type ShiftPreference = "Day" | "Night" | "Rotational";
+
+export type HomeCareRequest = {
+  id: string;
+  contactName: string;
+  mobile: string;
+  email?: string;
+  relationship: string;
+  patientName: string;
+  patientAge: number;
+  patientGender: "Male" | "Female" | "Other";
+  address: string;
+  area: string;
+  city: string;
+  state: string;
+  pinCode: string;
+  landmark?: string;
+  service: string;
+  careDescription: string;
+  mobilityAssistance: boolean;
+  specialCare?: string;
+  doctorInstructions?: string;
+  dutyHours: HomeCareDuty;
+  preferredStartDate: string;
+  preferredShift: ShiftPreference;
+  urgency: "Normal" | "Urgent";
+  documents: StoredDocument[];
+  consentContact: boolean;
+  consentPrivacy: boolean;
+  status: HomeCareRequestStatus;
+  adminNotes?: string;
+  assignedStaffId?: string;
+  patientId?: string;
+  bookingId?: string;
+  history: RecordHistory[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CareerApplicationStatus =
+  | "new"
+  | "under_review"
+  | "shortlisted"
+  | "interview_scheduled"
+  | "selected"
+  | "rejected"
+  | "joined";
+
+export type CareerApplication = {
+  id: string;
+  fullName: string;
+  mobile: string;
+  email: string;
+  dateOfBirth: string;
+  gender: "Male" | "Female" | "Other";
+  address: string;
+  city: string;
+  state: string;
+  pinCode: string;
+  applyingFor: string;
+  preferredLocation: string;
+  expectedSalary?: string;
+  employmentType: "Full Time" | "Part Time";
+  preferredShift: ShiftPreference;
+  highestEducation: string;
+  nursingQualification: string;
+  institutionName: string;
+  passingYear: string;
+  experienceLevel: "Fresher" | "Experienced";
+  yearsOfExperience: number;
+  previousEmployer?: string;
+  previousRole?: string;
+  skills: string[];
+  otherSkills?: string;
+  availabilityType: "Full Time" | "Part Time";
+  availabilityShift: ShiftPreference;
+  joiningDate: string;
+  documents: StoredDocument[];
+  about?: string;
+  referenceContact?: string;
+  consent: boolean;
+  status: CareerApplicationStatus;
+  adminRemarks?: string;
+  interviewAt?: string;
+  interviewNote?: string;
+  staffId?: string;
+  userId?: string;
+  history: RecordHistory[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ActivityKind =
   | "booking"
   | "attendance"
@@ -483,7 +614,8 @@ export type ActivityKind =
   | "sos"
   | "leave"
   | "complaint"
-  | "patient";
+  | "patient"
+  | "enquiry";
 
 export type ActivityEvent = {
   id: string;
@@ -528,5 +660,7 @@ export type DbShape = {
   expenses: Expense[];
   payments: PaymentRecord[];
   notifications: AppNotification[];
+  homeCareRequests: HomeCareRequest[];
+  careerApplications: CareerApplication[];
   settings: AppSettings;
 };

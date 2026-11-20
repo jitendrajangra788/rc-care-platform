@@ -8,6 +8,8 @@ const links = [
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
   { href: "/book", label: "Book a Nurse" },
+  { href: "/home-care/request", label: "Home Care Request" },
+  { href: "/careers/apply", label: "Careers" },
   { href: "/login", label: "Login" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },

@@ -28,6 +28,8 @@ export type Permission =
   | "payments.write"
   | "leads.read"
   | "leads.write"
+  | "enquiries.read"
+  | "enquiries.write"
   | "complaints.read"
   | "complaints.write"
   | "sos.manage"
@@ -65,6 +67,8 @@ const ALL: Permission[] = [
   "payments.write",
   "leads.read",
   "leads.write",
+  "enquiries.read",
+  "enquiries.write",
   "complaints.read",
   "complaints.write",
   "sos.manage",
@@ -95,6 +99,8 @@ const MATRIX: Record<Role, Permission[]> = {
     "billing.read",
     "leads.read",
     "leads.write",
+    "enquiries.read",
+    "enquiries.write",
     "complaints.read",
     "complaints.write",
     "sos.manage",

@@ -460,5 +460,7 @@ export const seedDb: DbShape = {
       createdAt: "2026-11-05T09:10:00.000Z",
     },
   ],
+  homeCareRequests: [],
+  careerApplications: [],
   settings: { ...defaultSettings },
 };

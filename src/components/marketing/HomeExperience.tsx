@@ -7,6 +7,7 @@ import {
   BedDouble,
   CheckCircle2,
   Heart,
+  Briefcase,
   Home,
   Phone,
   Plus,
@@ -208,6 +209,41 @@ export function HomeExperience({
                 </Link>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-[var(--line)] bg-[#F7FAF9]">
+        <div className="mx-auto max-w-6xl px-4 py-9 sm:px-5 md:px-8 md:py-12">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#087F8C] sm:text-[11px]">
+            Start here
+          </p>
+          <h2 className="font-display mt-2 max-w-2xl text-[clamp(1.45rem,4vw,2.25rem)] leading-[1.1] tracking-[-0.03em] text-[#172D3A]">
+            How Can We Help You?
+          </h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <article className="rounded-2xl border border-[#087F8C]/15 bg-white p-5 shadow-[0_8px_24px_rgba(8,127,140,0.06)]">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#DDF5EC] text-[#087F8C]">
+                <Briefcase className="h-5 w-5" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-[#172D3A]">Join Our Team</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted">Build your career with Roshan Care.</p>
+              <Link href="/careers/apply" className="btn btn-primary mt-5 inline-flex">
+                Apply for a Job
+              </Link>
+            </article>
+            <article className="rounded-2xl border border-[#087F8C]/15 bg-white p-5 shadow-[0_8px_24px_rgba(8,127,140,0.06)]">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#DDF5EC] text-[#087F8C]">
+                <Stethoscope className="h-5 w-5" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-[#172D3A]">Need Nursing Care at Home?</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted">
+                Request professional nursing and caregiving services.
+              </p>
+              <Link href="/home-care/request" className="btn btn-primary mt-5 inline-flex">
+                Book a Nurse
+              </Link>
+            </article>
           </div>
         </div>
       </section>

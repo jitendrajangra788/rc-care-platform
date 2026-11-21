@@ -92,9 +92,9 @@ function needsMigrate(db: Partial<DbShape>) {
   if (!Array.isArray(db.payments)) return true;
   if (!Array.isArray(db.notifications)) return true;
   if (!db.settings) return true;
-  const hasCoords = db.bookings?.some((b) => typeof b.lat === "number");
-  if (!hasCoords) return true;
-  const missingSalary = db.staff?.some((s) => typeof s.salaryPerShift !== "number");
+  const bookings = db.bookings || [];
+  if (bookings.length > 0 && !bookings.some((b) => typeof b.lat === "number")) return true;
+  const missingSalary = (db.staff || []).some((s) => typeof s.salaryPerShift !== "number");
   if (missingSalary) return true;
   return false;
 }
@@ -102,16 +102,8 @@ function needsMigrate(db: Partial<DbShape>) {
 function mergeMigrated(parsed: DbShape): DbShape {
   const merged = ensureArrays({
     ...seedDb,
-    users: (() => {
-      const existing = parsed.users?.length ? [...parsed.users] : [];
-      for (const seeded of seedDb.users) {
-        if (!existing.some((u) => u.email.toLowerCase() === seeded.email.toLowerCase())) {
-          existing.push(seeded);
-        }
-      }
-      return existing.length ? existing : seedDb.users;
-    })(),
-    staff: parsed.staff?.length
+    users: parsed.users?.length ? parsed.users : seedDb.users,
+    staff: Array.isArray(parsed.staff)
       ? parsed.staff.map((s) => {
           const seeded = seedDb.staff.find((x) => x.id === s.id);
           return {
@@ -123,7 +115,7 @@ function mergeMigrated(parsed: DbShape): DbShape {
           };
         })
       : seedDb.staff,
-    bookings: (parsed.bookings?.length ? parsed.bookings : seedDb.bookings).map((b) => {
+    bookings: (Array.isArray(parsed.bookings) ? parsed.bookings : seedDb.bookings).map((b) => {
       const seeded = seedDb.bookings.find((x) => x.id === b.id);
       return {
         ...b,
@@ -140,15 +132,15 @@ function mergeMigrated(parsed: DbShape): DbShape {
     })),
     salaryPayouts: parsed.salaryPayouts || [],
     monthlySalaries: parsed.monthlySalaries || seedDb.monthlySalaries || [],
-    careLocations: parsed.careLocations?.length ? parsed.careLocations : seedDb.careLocations,
-    siteAllotments: parsed.siteAllotments?.length ? parsed.siteAllotments : seedDb.siteAllotments,
+    careLocations: Array.isArray(parsed.careLocations) ? parsed.careLocations : seedDb.careLocations,
+    siteAllotments: Array.isArray(parsed.siteAllotments) ? parsed.siteAllotments : seedDb.siteAllotments,
     medications: parsed.medications || seedDb.medications,
     activities: parsed.activities || seedDb.activities || [],
-    careNotes: parsed.careNotes?.length ? parsed.careNotes : seedDb.careNotes,
-    invoices: parsed.invoices?.length ? parsed.invoices : seedDb.invoices,
-    leads: parsed.leads?.length ? parsed.leads : seedDb.leads,
-    leaves: parsed.leaves?.length ? parsed.leaves : seedDb.leaves || [],
-    nurseAvailability: parsed.nurseAvailability?.length
+    careNotes: Array.isArray(parsed.careNotes) ? parsed.careNotes : seedDb.careNotes,
+    invoices: Array.isArray(parsed.invoices) ? parsed.invoices : seedDb.invoices,
+    leads: Array.isArray(parsed.leads) ? parsed.leads : seedDb.leads,
+    leaves: Array.isArray(parsed.leaves) ? parsed.leaves : seedDb.leaves || [],
+    nurseAvailability: Array.isArray(parsed.nurseAvailability)
       ? parsed.nurseAvailability
       : seedDb.nurseAvailability || [],
     documents: parsed.documents || [],
@@ -158,7 +150,7 @@ function mergeMigrated(parsed: DbShape): DbShape {
     doctorNotes: parsed.doctorNotes || [],
     callLogs: parsed.callLogs || [],
     auditLogs: parsed.auditLogs || [],
-    patients: parsed.patients?.length ? parsed.patients : seedDb.patients || [],
+    patients: Array.isArray(parsed.patients) ? parsed.patients : seedDb.patients || [],
     carePlans: parsed.carePlans || seedDb.carePlans || [],
     vitals: parsed.vitals || seedDb.vitals || [],
     careReports: parsed.careReports || seedDb.careReports || [],

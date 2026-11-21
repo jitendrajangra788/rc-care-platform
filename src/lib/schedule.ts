@@ -13,17 +13,11 @@ import {
 } from "date-fns";
 import type { Booking, BookingStatus, LeaveRequest, NurseAvailability, Staff } from "./types";
 
-/** Profile must exist, with a phone and one of the three shifts, before a duty is assigned. */
-export function staffWorkBlock(staff: Staff | undefined, shift: Booking["shift"]) {
+/** A saved staff profile with a mobile is enough to assign a booking. Shift on the profile does not block the booking. */
+export function staffWorkBlock(staff: Staff | undefined, _shift: Booking["shift"]) {
   if (!staff) return "Add the staff profile first. Work starts only after the profile is saved.";
   const digits = staff.phone.replace(/\D/g, "");
   if (digits.length < 10) return "Save a mobile number on the staff profile before assigning work.";
-  if (!staff.dutyShift) {
-    return "Set this staff member to Morning, Night, or Visit before they can work.";
-  }
-  if (isStaffDutyShift(shift) && staff.dutyShift !== shift) {
-    return `${staff.name} can only work the ${staff.dutyShift} shift.`;
-  }
   return null;
 }
 

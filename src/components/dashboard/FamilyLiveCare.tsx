@@ -68,7 +68,13 @@ export function FamilyLiveCare({
       items.push({
         id: `a-${a.id}`,
         at: a.createdAt,
-        title: `${a.type === "evening" || a.type === "checkout" ? "Evening" : "Morning"} check-in`,
+        title: `${
+          a.type === "evening" || a.type === "checkout" || a.type === "night"
+            ? "Night"
+            : a.type === "visit"
+              ? "Visit"
+              : "Morning"
+        } check-in`,
         detail: a.dutyDate || a.createdAt.slice(0, 10),
         kind: "attendance",
       });
@@ -198,7 +204,7 @@ export function FamilyLiveCare({
             text={progress?.morningDone ? "Present + photo done" : "Waiting"}
           />
           <StatusCard
-            label="Evening"
+            label="Night"
             ok={Boolean(progress?.eveningDone)}
             text={
               progress?.eveningDone
@@ -251,7 +257,7 @@ export function FamilyLiveCare({
         <div className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {photos.length === 0 ? (
             <p className="text-sm text-muted sm:col-span-2">
-              Photos appear after staff marks morning or evening present.
+              Photos appear after staff marks morning or night present.
             </p>
           ) : (
             photos.map((p) => (

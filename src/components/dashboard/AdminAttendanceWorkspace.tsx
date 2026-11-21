@@ -91,7 +91,8 @@ export function AdminAttendanceWorkspace({
         const date = a.dutyDate || a.createdAt.slice(0, 10);
         if (dateFilter && date !== dateFilter) return false;
         const slot = normalizeSlot(a.type);
-        if (slotFilter !== "all" && slot !== slotFilter) return false;
+        if (slotFilter === "evening" && slot !== "evening" && slot !== "night") return false;
+        if (slotFilter === "morning" && slot !== "morning") return false;
         if (staffFilter !== "all" && a.staffId !== staffFilter) return false;
         const b = bookings.find((x) => x.id === a.bookingId);
         const sName = staffNameById[a.staffId] || "";
@@ -123,7 +124,7 @@ export function AdminAttendanceWorkspace({
           evening: rows.some(
             (a) =>
               (a.dutyDate || a.createdAt.slice(0, 10)) === today &&
-              normalizeSlot(a.type) === "evening",
+              normalizeSlot(a.type) === "evening" || normalizeSlot(a.type) === "night",
           ),
         };
         return {
@@ -164,7 +165,7 @@ export function AdminAttendanceWorkspace({
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="Today marks" value={String(kpis.todayMarks)} hint={`${kpis.complete} duties complete`} tone="sea" />
         <Kpi label="Morning done" value={`${kpis.morning}/${activeDuties.length}`} hint="Active duties" tone="ink" />
-        <Kpi label="Evening done" value={`${kpis.evening}/${activeDuties.length}`} hint="Salary unlocks on evening" tone="mint" />
+        <Kpi label="Night done" value={`${kpis.evening}/${activeDuties.length}`} hint="Salary unlocks on night" tone="mint" />
         <Kpi
           label="Alerts"
           value={String(kpis.weak)}
@@ -200,7 +201,7 @@ export function AdminAttendanceWorkspace({
               </p>
               <h2 className="font-display mt-1 text-3xl">Who is present today</h2>
               <p className="mt-2 text-sm text-[var(--sidebar-fg-muted)]">
-                Morning + evening dono green = duty complete. Missing slots red/amber me dikhte hain.
+                Morning + night dono green = duty complete. Missing slots red/amber me dikhte hain.
               </p>
             </div>
             <div className="p-4 md:p-3">
@@ -239,7 +240,7 @@ export function AdminAttendanceWorkspace({
                                   : "bg-[var(--danger-soft)] text-danger",
                             )}
                           >
-                            {p.complete ? "Complete" : p.morningDone ? "Evening left" : "Pending"}
+                            {p.complete ? "Complete" : p.morningDone ? "Night left" : "Pending"}
                           </span>
                         </div>
                         <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -258,7 +259,7 @@ export function AdminAttendanceWorkspace({
                           />
                           <SlotChip
                             icon={<Moon className="h-3.5 w-3.5" />}
-                            label="Evening"
+                            label="Night"
                             done={p.eveningDone}
                             time={
                               p.evening
@@ -351,7 +352,7 @@ export function AdminAttendanceWorkspace({
                       slotFilter === s ? "bg-ink text-[var(--sidebar-fg)]" : "bg-paper-2 text-ink-soft",
                     )}
                   >
-                    {s}
+                    {s === "evening" ? "Night" : s === "morning" ? "Morning" : "All"}
                   </button>
                 ))}
                 <select
@@ -425,7 +426,7 @@ export function AdminAttendanceWorkspace({
             <div>
               <h2 className="font-display text-2xl">GPS trail map</h2>
               <p className="mt-1 text-sm text-ink-soft">
-                Booking-wise path — geofence ring, morning/evening dots, jump review.
+                Booking-wise path — geofence ring, morning/night dots, jump review.
               </p>
             </div>
           </div>
@@ -484,12 +485,12 @@ export function AdminAttendanceWorkspace({
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <SlotChip
                     icon={<Sun className="h-3.5 w-3.5" />}
-                    label="Today AM"
+                    label="Today morning"
                     done={row.todayMorning}
                   />
                   <SlotChip
                     icon={<Moon className="h-3.5 w-3.5" />}
-                    label="Today PM"
+                    label="Today night"
                     done={row.todayEvening}
                   />
                 </div>

@@ -21,7 +21,7 @@ export default function TermsPage() {
           <section className="space-y-3 text-[15px] leading-relaxed text-muted">
             <h2 className="font-display text-2xl text-heading">Staff duties</h2>
             <p>
-              Assigned staff must mark morning and evening presence as required, follow clinical
+              Assigned staff must mark morning and night presence as required, follow clinical
               instructions, and log medicines/notes for family visibility. Site PIN and geofence
               rules may apply.
             </p>

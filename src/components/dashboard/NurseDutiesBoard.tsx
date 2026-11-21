@@ -151,8 +151,8 @@ export function NurseDutiesBoard({
                     ) : null}
                   </div>
                   <div className="flex gap-2">
-                    <NurseStatusPill label="AM" ok={progress.morningDone} />
-                    <NurseStatusPill label="PM" ok={progress.eveningDone} />
+                    <NurseStatusPill label="Morning" ok={progress.morningDone} />
+                    <NurseStatusPill label="Night" ok={progress.eveningDone} />
                   </div>
                 </div>
 

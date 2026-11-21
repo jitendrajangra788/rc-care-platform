@@ -2,7 +2,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Pencil, Search, Users } from "lucide-react";
+import { Eye, EyeOff, LayoutGrid, List, Pencil, Search, Users } from "lucide-react";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import type { Role, SessionUser } from "@/lib/types";
 import { titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function UsersManager({ users }: { users: SessionUser[] }) {
   const [showPassword, setShowPassword] = useState(false);
   const [oneTimePassword, setOneTimePassword] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [layout, setLayout] = useState<"list" | "grid">("list");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -289,6 +291,14 @@ export function UsersManager({ users }: { users: SessionUser[] }) {
               aria-label="Search users"
             />
           </div>
+          <ViewToggle
+            value={layout}
+            onChange={setLayout}
+            options={[
+              { id: "list", label: "List view", icon: List },
+              { id: "grid", label: "Grid view", icon: LayoutGrid },
+            ]}
+          />
           <Select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -313,7 +323,13 @@ export function UsersManager({ users }: { users: SessionUser[] }) {
         ) : filtered.length === 0 ? (
           <p className="py-3 text-sm text-muted">No accounts match this search.</p>
         ) : (
-          <div className="max-h-[32rem] space-y-1.5 overflow-y-auto pr-0.5">
+          <div
+            className={
+              layout === "grid"
+                ? "grid max-h-[32rem] content-start gap-2 overflow-y-auto pr-0.5 sm:grid-cols-2"
+                : "max-h-[32rem] space-y-1.5 overflow-y-auto pr-0.5"
+            }
+          >
             {filtered.map((u) => {
               const selected = editingId === u.id;
               return (

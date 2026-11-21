@@ -42,6 +42,7 @@ import {
 import type { ActivityEvent, Lead } from "@/lib/types";
 import { formatDate, formatDateTime, formatPhone, titleCase } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -797,40 +798,14 @@ export function LeadsManager({
         onFilterChange={(id) => setStatus(id as "all" | Lead["status"])}
         actions={
           <>
-            <div
-              role="group"
-              aria-label="View mode"
-              className="inline-flex items-center rounded-full border border-[var(--line)] bg-surface p-0.5 shadow-[var(--shadow-xs)]"
-            >
-              <button
-                type="button"
-                aria-label="Kanban view"
-                aria-pressed={view === "kanban"}
-                onClick={() => setView("kanban")}
-                className={cn(
-                  "grid h-8 w-8 place-items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
-                  view === "kanban"
-                    ? "bg-primary text-[var(--sidebar-fg)] shadow-sm"
-                    : "text-muted hover:text-heading",
-                )}
-              >
-                <Kanban className="h-3.5 w-3.5" strokeWidth={2.25} />
-              </button>
-              <button
-                type="button"
-                aria-label="List view"
-                aria-pressed={view === "table"}
-                onClick={() => setView("table")}
-                className={cn(
-                  "grid h-8 w-8 place-items-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
-                  view === "table"
-                    ? "bg-primary text-[var(--sidebar-fg)] shadow-sm"
-                    : "text-muted hover:text-heading",
-                )}
-              >
-                <List className="h-3.5 w-3.5" strokeWidth={2.25} />
-              </button>
-            </div>
+            <ViewToggle
+              value={view}
+              onChange={setView}
+              options={[
+                { id: "kanban", label: "Board view", icon: Kanban },
+                { id: "table", label: "List view", icon: List },
+              ]}
+            />
             <Button type="button" size="sm" onClick={() => setShowForm((v) => !v)}>
               <Plus className="h-3.5 w-3.5" />
               {showForm ? "Close" : "Add lead"}

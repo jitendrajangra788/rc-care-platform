@@ -489,8 +489,8 @@ function WorklistRow({ row }: { row: NursePatientRow }) {
         </Badge>
         {row.isTodayDuty ? (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <NurseStatusPill label="AM" ok={row.morningDone} compact />
-            <NurseStatusPill label="PM" ok={row.eveningDone} compact />
+            <NurseStatusPill label="Morning" ok={row.morningDone} compact />
+            <NurseStatusPill label="Night" ok={row.eveningDone} compact />
           </div>
         ) : null}
       </div>

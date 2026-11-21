@@ -297,7 +297,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
                   />
                 </div>
                 <p className="text-xs text-ink-soft">
-                  Duty complete (morning + evening) hone pe per-shift salary credit hoti hai.
+                  Duty complete (morning + night) hone pe per-shift salary credit hoti hai.
                 </p>
                 <input
                   className="field"

@@ -3,7 +3,8 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Phone, Plus, UserRound } from "lucide-react";
+import { Eye, LayoutGrid, List, Pencil, Phone, Plus, UserRound } from "lucide-react";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import type { Patient } from "@/lib/types";
 import { formatDate, formatPhone, telHref, titleCase } from "@/lib/format";
 import { toast } from "@/components/ui/toast";
@@ -63,6 +64,7 @@ export function PatientsManager({
   const [errors, setErrors] = useState<PatientFormErrors>({});
   const [confirmPause, setConfirmPause] = useState<Patient | null>(null);
   const [statusBusy, setStatusBusy] = useState(false);
+  const [layout, setLayout] = useState<"list" | "grid">("list");
 
   const areas = useMemo(() => {
     const set = new Set(
@@ -347,10 +349,20 @@ export function PatientsManager({
               </option>
             ))}
           </select>
-          <Button type="button" className="w-full sm:w-auto" onClick={openCreate}>
-            <Plus className="h-3.5 w-3.5" aria-hidden />
-            Add patient
-          </Button>
+          <div className="flex items-center justify-end gap-2">
+            <ViewToggle
+              value={layout}
+              onChange={setLayout}
+              options={[
+                { id: "list", label: "List view", icon: List },
+                { id: "grid", label: "Grid view", icon: LayoutGrid },
+              ]}
+            />
+            <Button type="button" className="w-full sm:w-auto" onClick={openCreate}>
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              Add patient
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -362,6 +374,47 @@ export function PatientsManager({
           actionLabel="Add patient"
           onAction={openCreate}
         />
+      ) : layout === "grid" ? (
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.length === 0 ? (
+            <EmptyState
+              className="sm:col-span-2 xl:col-span-3"
+              title="No matches"
+              description="Try another status or area filter."
+            />
+          ) : (
+            filtered.map((p) => (
+              <article
+                key={p.id}
+                className="flex h-full flex-col gap-3 rounded-xl border border-[var(--line)] bg-white p-3"
+              >
+                <div className="flex items-start gap-3">
+                  <Avatar name={p.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/dashboard/admin/patients/${p.id}`}
+                      className="font-name text-base text-heading hover:text-primary"
+                    >
+                      {titleCase(p.name)}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {p.area || "Bhilwara"} · {formatPhone(p.phone)}
+                    </p>
+                  </div>
+                  <StatusBadge status={p.status} />
+                </div>
+                <div className="mt-auto flex flex-wrap gap-1.5">
+                  <Link href={`/dashboard/admin/patients/${p.id}`} className="btn btn-outline btn-sm">
+                    <Eye className="h-3.5 w-3.5" /> View
+                  </Link>
+                  <Button type="button" size="sm" variant="outline" onClick={() => openEdit(p)}>
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </Button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
       ) : (
         <DataTable
           data={filtered}

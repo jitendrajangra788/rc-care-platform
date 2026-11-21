@@ -29,7 +29,7 @@ export default async function NurseAttendancePage() {
   const statusLabel = desk.attendanceComplete
     ? "Duty Completed"
     : desk.todayAttendanceCount >= 2
-      ? "Evening Completed"
+      ? "Night Completed"
       : desk.todayAttendanceCount === 1
         ? "Morning Completed"
         : "Not Started";
@@ -79,7 +79,7 @@ export default async function NurseAttendancePage() {
           }
           tone={desk.attendanceComplete ? "success" : "warning"}
           icon={<MapPinned className="h-4 w-4" />}
-          hint="Morning + evening marks"
+          hint="Morning + night marks"
         />
         <StatCard
           label="Current status"

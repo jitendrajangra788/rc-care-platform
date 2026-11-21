@@ -216,9 +216,9 @@ export function NurseOverviewDashboard({
                   />
                   <SlotCard
                     icon={<Moon className="h-4 w-4" />}
-                    label="Evening"
+                    label="Night"
                     done={!!progress?.eveningDone}
-                    active={progress?.nextSlot === "evening"}
+                    active={progress?.nextSlot === "evening" || progress?.nextSlot === "night"}
                   />
                 </div>
 
@@ -404,8 +404,8 @@ export function NurseOverviewDashboard({
                       </ListTileMeta>
                     </div>
                     <div className="flex gap-1.5">
-                      <NurseStatusPill label="AM" ok={p.morningDone} compact />
-                      <NurseStatusPill label="PM" ok={p.eveningDone} compact />
+                      <NurseStatusPill label="Morning" ok={p.morningDone} compact />
+                      <NurseStatusPill label="Night" ok={p.eveningDone} compact />
                     </div>
                   </div>
                   <div className="mt-2 flex gap-1">

@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { LayoutGrid, List } from "lucide-react";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -55,6 +57,7 @@ export function CareerApplicationsManager({
   const [staffRole, setStaffRole] = useState<"Nurse" | "Attendant" | "Physio">("Nurse");
   const [salary, setSalary] = useState("700");
   const [busy, setBusy] = useState(false);
+  const [layout, setLayout] = useState<"list" | "grid">("list");
 
   const stats = useMemo(
     () => ({
@@ -190,18 +193,35 @@ export function CareerApplicationsManager({
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="overflow-hidden rounded-xl border border-[var(--line)] bg-white">
+          <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] px-3 py-2">
+            <p className="text-sm font-semibold text-[#172D3A]">{filtered.length} applications</p>
+            <ViewToggle
+              value={layout}
+              onChange={setLayout}
+              options={[
+                { id: "list", label: "List view", icon: List },
+                { id: "grid", label: "Grid view", icon: LayoutGrid },
+              ]}
+            />
+          </div>
           {filtered.length === 0 ? (
             <EmptyState title="No applications" description="Try another search or filter." />
           ) : (
-            <ul className="divide-y divide-[var(--line)]">
+            <ul
+              className={
+                layout === "grid"
+                  ? "grid gap-2 p-2 sm:grid-cols-2"
+                  : "divide-y divide-[var(--line)]"
+              }
+            >
               {filtered.map((row) => (
                 <li key={row.id}>
                   <button
                     type="button"
                     onClick={() => openRow(row)}
                     className={`w-full px-3 py-3 text-left transition hover:bg-[#F7FAF9] ${
-                      row.id === selectedId ? "bg-[#DDF5EC]" : ""
-                    }`}
+                      layout === "grid" ? "h-full rounded-xl border border-[var(--line)]" : ""
+                    } ${row.id === selectedId ? "bg-[#DDF5EC]" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>

@@ -242,7 +242,7 @@ export function LocationsManager({
                       {member?.name || a.staffId} → {loc?.locationName || a.locationId}
                     </p>
                     <p className="text-sm text-muted">
-                      {a.shift} · {a.startDate}
+                      {a.shift === "Evening" ? "Night" : a.shift} · {a.startDate}
                       {a.endDate ? ` → ${a.endDate}` : ""}
                       {a.bookingId ? ` · ${a.bookingId}` : ""}
                     </p>

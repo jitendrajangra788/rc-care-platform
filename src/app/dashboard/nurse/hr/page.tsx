@@ -30,7 +30,7 @@ export default async function NurseHrPage() {
         <StatCard
           label="Performance"
           value={`${perf?.score ?? staff?.performanceScore ?? 80}`}
-          hint="Morning + evening completion"
+          hint="Morning + night completion"
           tone="primary"
           icon={<Award className="h-4 w-4" />}
         />

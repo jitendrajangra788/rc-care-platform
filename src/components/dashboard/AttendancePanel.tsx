@@ -182,7 +182,7 @@ export function AttendancePanel({
     : !pinOk
       ? "Enter the 4–6 digit care site PIN."
       : !photoDataUrl
-        ? `Capture the ${nextSlot === "evening" ? "evening" : "morning"} attendance photo.`
+        ? `Capture the ${nextSlot === "evening" || nextSlot === "night" ? "night" : nextSlot === "visit" ? "visit" : "morning"} attendance photo.`
         : gps && !usableGps && !demoForce
           ? "GPS accurate nahi hai. Phone me Location → High accuracy on karke Refresh GPS dabayein."
           : farAway && !demoForce
@@ -199,8 +199,8 @@ export function AttendancePanel({
     }
     if (action === "evening" || action === "complete") {
       if (!progress.morningDone) return "Mark morning present first.";
-      if (progress.eveningDone) return "Evening attendance already marked.";
-      if (nextSlot !== "evening") return "Evening check-out is not available yet.";
+      if (progress.eveningDone) return "Night attendance already marked.";
+      if (nextSlot !== "evening") return "Night check-in is not available yet.";
     }
     return requirementsReason;
   }
@@ -215,7 +215,7 @@ export function AttendancePanel({
   const statusLabel = progress.complete
     ? "Duty Completed"
     : progress.eveningDone
-      ? "Evening Completed"
+      ? "Night Completed"
       : progress.morningDone
         ? "Morning Completed"
         : gps || photoDataUrl
@@ -397,7 +397,7 @@ export function AttendancePanel({
     if (!photoDataUrl) {
       toast.info(
         "Site photo required",
-        `${slot === "morning" ? "Morning" : "Evening"} photo upload karo`,
+        `${slot === "morning" ? "Morning" : "Night"} photo upload karo`,
       );
       return;
     }
@@ -410,7 +410,7 @@ export function AttendancePanel({
       return;
     }
     if (progress.complete) {
-      toast.info("Duty already complete", "Aaj morning + evening dono ho chuke hain");
+      toast.info("Duty already complete", "Aaj morning + night dono ho chuke hain");
       return;
     }
     if (!demoForce && !opts?.forceDemo && !isUsableGps(gps.accuracy)) {
@@ -478,12 +478,12 @@ export function AttendancePanel({
       if (data.dutyComplete) {
         const pay = data.payout?.amount ?? shiftPay;
         setMessage(
-          `Duty COMPLETE · ${punctuality} · morning + evening done · ${formatINR(pay)} earned`,
+          `Duty COMPLETE · ${punctuality} · morning + night done · ${formatINR(pay)} earned`,
         );
         toast.success("Duty completed successfully", `${timingNote} · ${formatINR(pay)}`);
       } else {
         setMessage(
-          `${timingNote} Evening pe photo + present lagao tab duty complete hogi.`,
+          `${timingNote} Night pe photo + present lagao tab duty complete hogi.`,
         );
         toast.success(`${slot} · ${punctuality}`, timingNote);
       }
@@ -548,7 +548,7 @@ export function AttendancePanel({
               {statusLabel}
             </Badge>
             <Badge tone={progress.complete ? "success" : "neutral"}>
-              {progress.complete ? `Salary · ${formatINR(shiftPay)}` : "Salary after evening"}
+              {progress.complete ? `Salary · ${formatINR(shiftPay)}` : "Salary after night"}
             </Badge>
           </div>
         </div>
@@ -690,7 +690,7 @@ export function AttendancePanel({
               <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
               <p className="font-display mt-3 text-2xl text-success">Duty completed</p>
               <p className="mt-1 text-sm text-success/80">
-                Morning + evening done · {formatINR(shiftPay)} earned
+                Morning + night done · {formatINR(shiftPay)} earned
               </p>
             </section>
           ) : (
@@ -832,12 +832,12 @@ export function AttendancePanel({
                     </p>
                     <h3 className="font-display mt-1 text-xl text-heading">
                       {nextSlot === "evening"
-                        ? "Evening check-out photo"
+                        ? "Night check-in photo"
                         : "Morning check-in photo"}
                     </h3>
                     <p className="mt-0.5 text-sm text-muted">
                       {nextSlot === "evening"
-                        ? "Required for evening present and duty completion."
+                        ? "Required for night present and duty completion."
                         : "Required for morning present at the care site."}
                     </p>
                   </div>
@@ -852,7 +852,7 @@ export function AttendancePanel({
                   onChange={setPhotoDataUrl}
                   title={
                     nextSlot === "evening"
-                      ? "Capture evening check-out photo"
+                      ? "Capture night check-in photo"
                       : "Capture morning check-in photo"
                   }
                   hint="Tap to open camera or choose from gallery"
@@ -992,7 +992,7 @@ export function AttendancePanel({
                   <p className="text-xs text-muted">Morning: {morningReason}</p>
                 ) : null}
                 {!canMarkEvening && eveningReason && nextSlot !== "evening" ? (
-                  <p className="text-xs text-muted">Evening / complete: {eveningReason}</p>
+                  <p className="text-xs text-muted">Night / complete: {eveningReason}</p>
                 ) : null}
               </section>
             </>

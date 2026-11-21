@@ -51,6 +51,7 @@ import { Alert } from "@/components/ui/Alert";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormField, Input, Select, Textarea } from "@/components/ui/Input";
 import { ListToolbar } from "@/components/ui/ListToolbar";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { Pagination } from "@/components/ui/Pagination";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -684,34 +685,14 @@ export function BookingsWorkspace({
         }}
         placeholder="Search patient, booking ID, phone, area, care type..."
         actions={
-          <div className="flex rounded-full border border-[var(--line)] p-0.5">
-            <button
-              type="button"
-              aria-label="List view"
-              onClick={() => setView("list")}
-              className={cn(
-                "rounded-full p-2",
-                view === "list"
-                  ? "bg-primary text-[var(--sidebar-fg)]"
-                  : "text-muted hover:text-heading",
-              )}
-            >
-              <List className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              aria-label="Calendar roster view"
-              onClick={() => setView("roster")}
-              className={cn(
-                "rounded-full p-2",
-                view === "roster"
-                  ? "bg-primary text-[var(--sidebar-fg)]"
-                  : "text-muted hover:text-heading",
-              )}
-            >
-              <CalendarDays className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <ViewToggle
+            value={view}
+            onChange={setView}
+            options={[
+              { id: "list", label: "List view", icon: List },
+              { id: "roster", label: "Calendar roster view", icon: CalendarDays },
+            ]}
+          />
         }
       />
 

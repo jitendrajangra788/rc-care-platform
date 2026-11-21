@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { LayoutGrid, List } from "lucide-react";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input, Select } from "@/components/ui/Input";
@@ -38,6 +40,7 @@ export function HomeCareRequestsManager({
   staff: StaffOption[];
 }) {
   const rows = requests;
+  const [layout, setLayout] = useState<"list" | "grid">("list");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [from, setFrom] = useState("");
@@ -110,7 +113,8 @@ export function HomeCareRequestsManager({
         <StatCard label="Converted" value={String(stats.converted)} tone="success" hint={`${stats.urgent} urgent open`} />
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
         {lanes.map((lane) => (
           <button
             key={lane.id}
@@ -129,6 +133,15 @@ export function HomeCareRequestsManager({
             <span className="ml-1.5 opacity-80">{lane.count}</span>
           </button>
         ))}
+        </div>
+        <ViewToggle
+          value={layout}
+          onChange={setLayout}
+          options={[
+            { id: "list", label: "List view", icon: List },
+            { id: "grid", label: "Grid view", icon: LayoutGrid },
+          ]}
+        />
       </div>
 
       <div className="grid gap-2 rounded-xl border border-[var(--line)] bg-white p-2.5 md:grid-cols-[1.4fr_1fr_auto_auto]">
@@ -183,14 +196,24 @@ export function HomeCareRequestsManager({
           <EmptyState title="No requests" description="Try another search or status filter." />
         ) : (
           <>
-            <ul className="divide-y divide-[var(--line)]">
+            <ul
+              className={
+                layout === "grid"
+                  ? "grid gap-2 p-2 sm:grid-cols-2 xl:grid-cols-3"
+                  : "divide-y divide-[var(--line)]"
+              }
+            >
               {pageRows.map((row) => {
                 const owner = staff.find((member) => member.id === row.assignedStaffId);
                 return (
                   <li key={row.id}>
                     <Link
                       href={`/dashboard/admin/home-care-requests/${row.id}`}
-                      className="grid gap-2 px-3 py-2.5 transition hover:bg-[#F7FAF9] sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_auto] sm:items-center"
+                      className={
+                        layout === "grid"
+                          ? "flex h-full flex-col gap-2 rounded-xl border border-[var(--line)] bg-white p-3 transition hover:border-primary hover:bg-[#F7FAF9]"
+                          : "grid gap-2 px-3 py-2.5 transition hover:bg-[#F7FAF9] sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)_auto] sm:items-center"
+                      }
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[#172D3A]">

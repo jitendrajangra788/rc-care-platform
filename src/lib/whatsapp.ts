@@ -11,7 +11,7 @@ export const waTemplates = {
   morningDone: (patient: string, staff: string) =>
     `Update: ${staff} ne ${patient} ke liye morning present + photo complete kar diya hai.`,
   eveningDone: (patient: string, staff: string, amount: number) =>
-    `Duty complete: ${staff} ne ${patient} evening present lagaya. Shift pay ₹${amount} earned.`,
+    `Duty complete: ${staff} ne ${patient} night present lagaya. Shift pay ₹${amount} earned.`,
   sos: (patient: string, msg: string) =>
     `SOS ALERT · ${patient}\n${msg}\nPlease respond on Roshan Care desk immediately.`,
   invoiceDue: (patient: string, amount: number, due: string) =>

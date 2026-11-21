@@ -226,8 +226,8 @@ export const blogPosts: BlogPost[] = [
       hi: "GPS attendance kyun zaroori hai home nursing me",
     },
     excerpt: {
-      en: "Present is not just a register tick — geofence at the care address, photo proof, and morning/evening marks build trust.",
-      hi: "Present sirf register pe tick nahi — care address pe geofence, photo, aur morning/evening proof se trust banta hai.",
+      en: "Present is not just a register tick — geofence at the care address, photo proof, and morning/night marks build trust.",
+      hi: "Present sirf register pe tick nahi — care address pe geofence, photo, aur morning/night proof se trust banta hai.",
     },
     category: "Trust",
     readMins: 4,
@@ -241,8 +241,8 @@ export const blogPosts: BlogPost[] = [
         hi: "Home care me sabse common tension: “staff time pe aayi ya nahi?” Paper register se yeh clear nahi hota.",
       },
       {
-        en: "At Roshan Care, present is marked with GPS inside the care-site geofence plus a site photo. Morning and evening slots complete the duty.",
-        hi: "Roshan Care me present care-site geofence ke andar GPS + site photo se mark hota hai. Morning aur evening dono slots duty complete banate hain.",
+        en: "At Roshan Care, present is marked with GPS inside the care-site geofence plus a site photo. Morning and night slots complete the duty.",
+        hi: "Roshan Care me present care-site geofence ke andar GPS + site photo se mark hota hai. Morning aur night dono slots duty complete banate hain.",
       },
       {
         en: "This also keeps salary rules fair — late and half-day policies stay transparent, and families can see status in the portal.",

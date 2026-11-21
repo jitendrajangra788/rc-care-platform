@@ -163,7 +163,7 @@ export function GpsTrailMap({
 
           {points.map((p, i) => {
             const { x, y } = project(p.lat, p.lng);
-            const evening = p.type === "evening" || p.type === "checkout";
+            const evening = p.type === "evening" || p.type === "checkout" || p.type === "night";
             return (
               <g key={p.id}>
                 <circle
@@ -197,7 +197,7 @@ export function GpsTrailMap({
         <p className="text-xs text-ink-soft">
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-sea align-middle" /> Morning
           · <span className="ml-1 inline-block h-2.5 w-2.5 rounded-full bg-[#f0b429] align-middle" />{" "}
-          Evening
+          Night
         </p>
       </div>
 
@@ -212,7 +212,7 @@ export function GpsTrailMap({
             >
               <div>
                 <p className="font-medium capitalize">
-                  #{i + 1} · {p.type === "present" ? "morning" : p.type === "checkout" ? "evening" : p.type}
+                  #{i + 1} · {p.type === "present" ? "morning" : p.type === "evening" || p.type === "checkout" ? "night" : p.type}
                   {p.gpsQuality ? ` · GPS ${p.gpsQuality}` : ""}
                 </p>
                 <p className="text-xs text-ink-soft">

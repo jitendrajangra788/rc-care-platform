@@ -179,7 +179,7 @@ export function OpsHub(props: Props) {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Kpi label="Active duties" value={String(kpis.active)} />
             <Kpi label="Morning done" value={`${kpis.morning}/${kpis.active || 0}`} tone="mint" />
-            <Kpi label="Evening done" value={`${kpis.evening}/${kpis.active || 0}`} />
+            <Kpi label="Night done" value={`${kpis.evening}/${kpis.active || 0}`} />
             <Kpi label="Open SOS" value={String(kpis.openSos)} tone={kpis.openSos ? "warn" : "mint"} />
             <Kpi label="Leave pending" value={String(kpis.pendingLeaves)} />
             <Kpi label="Family dues" value={formatINR(kpis.dues)} />
@@ -315,7 +315,7 @@ export function OpsHub(props: Props) {
                             />
                             <DutyChip
                               icon={<Moon className="h-4 w-4" />}
-                              label="Evening"
+                              label="Night"
                               done={p.eveningDone}
                             />
                           </div>

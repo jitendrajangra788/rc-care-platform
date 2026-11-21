@@ -74,7 +74,7 @@ export function NurseSalaryLists({
         )}
       </Panel>
 
-      <Panel title="Duty payouts" subtitle="Morning + evening complete earnings">
+      <Panel title="Duty payouts" subtitle="Morning + night complete earnings">
         {payouts.length === 0 ? (
           <EmptyState title="No duty payouts" description="Complete AM + PM present to earn." />
         ) : (

@@ -115,7 +115,7 @@ export default async function FamilyDashboardPage() {
             </div>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
               <CareStatus label="Morning present" ok={Boolean(progress?.morningDone)} />
-              <CareStatus label="Evening present" ok={Boolean(progress?.eveningDone)} />
+              <CareStatus label="Night present" ok={Boolean(progress?.eveningDone)} />
               <CareStatus label="Duty complete today" ok={Boolean(progress?.complete)} />
             </div>
             <div className="mt-2 flex flex-wrap gap-2">

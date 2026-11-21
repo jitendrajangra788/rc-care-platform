@@ -9,6 +9,8 @@ import {
   ClipboardCheck,
   Download,
   IndianRupee,
+  LayoutGrid,
+  List,
   MapPin,
   Moon,
   Pencil,
@@ -37,6 +39,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Pagination } from "@/components/ui/Pagination";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 
 type StaffRow = Staff & { loginEmail?: string; hasLogin?: boolean };
 type DetailTab = "overview" | "calendar" | "presents" | "pay" | "desk";
@@ -147,6 +150,7 @@ export function StaffWorkspace({
   const [markNote, setMarkNote] = useState("");
   const [marking, setMarking] = useState(false);
   const [reveal, setReveal] = useState(true);
+  const [rosterView, setRosterView] = useState<"list" | "grid">("list");
 
   const selected = staff.find((s) => s.id === selectedId) || null;
   const weekDates = useMemo(() => lastNDates(7), []);
@@ -329,6 +333,16 @@ export function StaffWorkspace({
       toast.info("Select booking", "Pehle duty booking choose karo");
       return;
     }
+    const booking = bookings.find((b) => b.id === markBookingId);
+    const type =
+      markSlot === "morning"
+        ? "morning"
+        : booking?.shift === "Night"
+          ? "night"
+          : booking?.shift === "Visit"
+            ? "visit"
+            : "evening";
+    const typeLabel = type === "morning" ? "Morning" : type === "visit" ? "Visit" : "Night";
     setMarking(true);
     const res = await fetch("/api/attendance", {
       method: "POST",
@@ -337,7 +351,7 @@ export function StaffWorkspace({
         adminMark: true,
         staffId: selected.id,
         bookingId: markBookingId,
-        type: markSlot,
+        type,
         dutyDate: markDate,
         adminNote: markNote || undefined,
       }),
@@ -349,7 +363,7 @@ export function StaffWorkspace({
       return;
     }
     toast.success(
-      data.dutyComplete ? "Duty complete · salary earned" : `${markSlot} present marked`,
+      data.dutyComplete ? "Duty complete · salary earned" : `${typeLabel} present marked`,
       selected.name,
     );
     setMarkNote("");
@@ -446,9 +460,19 @@ export function StaffWorkspace({
         />
       ) : null}
 
-      <div className="grid gap-2 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <div
+        className={cn(
+          "grid gap-2",
+          rosterView === "list" && "xl:grid-cols-[22rem_minmax(0,1fr)]",
+        )}
+      >
         {/* Roster rail */}
-        <aside className="soft-panel flex max-h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-[var(--radius-2xl)] xl:sticky xl:top-4">
+        <aside
+          className={cn(
+            "soft-panel flex flex-col overflow-hidden rounded-[var(--radius-2xl)]",
+            rosterView === "list" && "max-h-[calc(100vh-8rem)] xl:sticky xl:top-4",
+          )}
+        >
           <div className="border-b border-[var(--line)] p-2 md:p-2.5">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -457,6 +481,14 @@ export function StaffWorkspace({
                 </p>
                 <p className="mt-1 text-sm text-ink-soft">{filtered.length} people</p>
               </div>
+              <ViewToggle
+                value={rosterView}
+                onChange={setRosterView}
+                options={[
+                  { id: "list", label: "List view", icon: List },
+                  { id: "grid", label: "Grid view", icon: LayoutGrid },
+                ]}
+              />
             </div>
             <div className="relative mt-1.5">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
@@ -499,7 +531,14 @@ export function StaffWorkspace({
             </div>
           </div>
 
-          <div className="flex-1 space-y-2 overflow-y-auto p-2 md:p-2.5">
+          <div
+            className={cn(
+              "flex-1 p-2 md:p-2.5",
+              rosterView === "list"
+                ? "space-y-2 overflow-y-auto"
+                : "grid content-start gap-2 sm:grid-cols-2 xl:grid-cols-3",
+            )}
+          >
             {staff.length === 0 ? (
               <EmptyState
                 icon={<UserRound className="h-5 w-5" />}
@@ -693,7 +732,7 @@ export function StaffWorkspace({
                     <HeroStat
                       label="Month presents"
                       value={String(detail.attMonth.totalMarks)}
-                      sub={`${detail.attMonth.morningCount} AM · ${detail.attMonth.eveningCount} PM`}
+                      sub={`${detail.attMonth.morningCount} morning · ${detail.attMonth.eveningCount} night`}
                     />
                     <HeroStat
                       label="Complete days"
@@ -898,7 +937,7 @@ export function StaffWorkspace({
                             key={date}
                             title={
                               day
-                                ? `${date}: ${day.morning ? "AM " : ""}${day.evening ? "PM" : ""}`
+                                ? `${date}: ${day.morning ? "Morning " : ""}${day.evening ? "Night" : ""}`
                                 : date
                             }
                             className={cn(
@@ -931,7 +970,7 @@ export function StaffWorkspace({
                       })}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-ink-soft">
-                      <LegendDot className="bg-mint" label="Complete (AM+PM)" />
+                      <LegendDot className="bg-mint" label="Complete (Morning+Night)" />
                       <LegendDot className="bg-sea" label="Partial" />
                       <LegendDot className="bg-[var(--line)]" label="Off / missing" />
                     </div>
@@ -957,7 +996,7 @@ export function StaffWorkspace({
                         <h3 className="font-display mt-1 text-2xl">All presents</h3>
                         <p className="mt-1 text-sm text-ink-soft">
                           {detail.attAll.totalMarks} marks · {detail.attAll.morningCount} morning ·{" "}
-                          {detail.attAll.eveningCount} evening
+                          {detail.attAll.eveningCount} night
                         </p>
                       </div>
                     </div>
@@ -1063,7 +1102,7 @@ export function StaffWorkspace({
                           <EmptyState
                             icon={<Wallet className="h-5 w-5" />}
                             title="No salary payouts yet"
-                            description="Evening present complete hone pe earn hota hai."
+                            description="Night present complete hone pe earn hota hai."
                             className="py-3"
                           />
                         ) : (
@@ -1109,7 +1148,7 @@ export function StaffWorkspace({
                         Mark present · {selected.name}
                       </h3>
                       <p className="mt-2 max-w-xl text-sm text-[var(--sidebar-fg-muted)]">
-                        GPS / phone fail ho to yahan se morning ya evening laga do. Evening pe
+                        GPS / phone fail ho to yahan se morning ya night laga do. Night pe
                         salary auto-earn hoti hai.
                       </p>
                     </div>
@@ -1163,7 +1202,7 @@ export function StaffWorkspace({
                                 ) : (
                                   <Moon className="h-4 w-4" />
                                 )}
-                                {s}
+                                {s === "morning" ? "Morning" : "Night"}
                               </button>
                             ))}
                           </div>

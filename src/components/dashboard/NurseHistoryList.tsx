@@ -26,7 +26,7 @@ export function NurseHistoryList({ history }: { history: Row[] }) {
     return history.filter((a) => {
       const slot = slotOf(a);
       if (filter === "morning") return slot === "morning";
-      if (filter === "evening") return slot === "evening";
+      if (filter === "evening") return slot === "evening" || slot === "night";
       if (filter === "late") return a.punctualityStatus === "late";
       return true;
     });
@@ -42,7 +42,7 @@ export function NurseHistoryList({ history }: { history: Row[] }) {
           [
             ["all", "All"],
             ["morning", "Morning"],
-            ["evening", "Evening"],
+            ["evening", "Night"],
             ["late", "Late"],
           ] as const
         ).map(([key, label]) => (
@@ -77,7 +77,14 @@ export function NurseHistoryList({ history }: { history: Row[] }) {
               <ListTileHeader>
                 <div>
                   <p className="font-display text-base capitalize text-heading">
-                    {slotOf(a)} · {a.dutyDate || a.createdAt.slice(0, 10)}
+                    {slotOf(a) === "evening" || slotOf(a) === "night"
+                      ? "Night"
+                      : slotOf(a) === "morning"
+                        ? "Morning"
+                        : slotOf(a) === "visit"
+                          ? "Visit"
+                          : slotOf(a)}{" "}
+                    · {a.dutyDate || a.createdAt.slice(0, 10)}
                   </p>
                   <ListTileMeta>
                     {a.patientName || a.bookingId} · {a.distanceMeters}m ·{" "}

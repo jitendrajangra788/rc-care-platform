@@ -29,7 +29,7 @@ export default async function NurseAttendanceHistoryPage() {
       <PageHeader
         eyebrow="Nurse ops · Attendance"
         title="Attendance history"
-        subtitle="Past morning and evening marks with punctuality and GPS status."
+        subtitle="Past morning and night marks with punctuality and GPS status."
         action={
           <Link href="/dashboard/nurse/attendance" className="btn btn-primary btn-sm">
             <MapPinned className="h-3.5 w-3.5" /> Mark present

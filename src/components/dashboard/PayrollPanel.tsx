@@ -108,7 +108,7 @@ export function PayrollPanel({
 
       <Panel
         title="Duty payouts"
-        subtitle="Morning + evening complete hone pe automatic earn entry banti hai."
+        subtitle="Morning + night complete hone pe automatic earn entry banti hai."
       >
         <div className="mb-1.5 flex flex-wrap items-center gap-2">
           <div className="relative min-w-[12rem] flex-1">
@@ -135,7 +135,7 @@ export function PayrollPanel({
         {filtered.length === 0 ? (
           <EmptyState
             title="No payouts yet"
-            description="Complete morning and evening attendance to unlock duty earnings."
+            description="Complete morning and night attendance to unlock duty earnings."
           />
         ) : (
           <div className="space-y-1.5">

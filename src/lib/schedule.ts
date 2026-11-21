@@ -26,8 +26,8 @@ export type ShiftKind = Booking["shift"];
 export const STAFF_DUTY_SHIFTS = ["Morning", "Night", "Visit"] as const;
 export type StaffDutyShift = (typeof STAFF_DUTY_SHIFTS)[number];
 
-export function isStaffDutyShift(value: string): value is StaffDutyShift {
-  return (STAFF_DUTY_SHIFTS as readonly string[]).includes(value);
+export function isStaffDutyShift(value?: string | null): value is StaffDutyShift {
+  return !!value && (STAFF_DUTY_SHIFTS as readonly string[]).includes(value);
 }
 
 export const SHIFT_PRESETS: Record<

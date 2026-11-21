@@ -47,12 +47,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (!body.dutyShift || !isStaffDutyShift(body.dutyShift)) {
-    return NextResponse.json(
-      { error: "Shift must be Morning, Night, or Visit" },
-      { status: 400 },
-    );
-  }
+  const dutyShift = isStaffDutyShift(body.dutyShift) ? body.dutyShift : "Morning";
   if (typeof body.salaryPerShift !== "number" || body.salaryPerShift <= 0) {
     return NextResponse.json({ error: "Per-shift salary is required" }, { status: 400 });
   }
@@ -84,7 +79,7 @@ export async function POST(req: Request) {
     email,
     role: body.role,
     phone: mobile,
-    dutyShift: body.dutyShift,
+    dutyShift,
     area: body.area?.trim() || "Bhilwara",
     skills: (body.skills || "")
       .split(",")

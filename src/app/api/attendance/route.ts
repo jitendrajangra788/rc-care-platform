@@ -186,13 +186,9 @@ export async function POST(req: Request) {
     }
     const { staffForUser } = await import("@/lib/scope");
     staff = staffForUser(db, session);
-    if (!staff || !staff.dutyShift) {
+    if (!staff) {
       return NextResponse.json(
-        {
-          error: staff
-            ? "Your shift (Morning, Night, or Visit) must be saved on the profile before you can work."
-            : "Staff profile not linked. Ask admin to add your profile first.",
-        },
+        { error: "Staff profile not linked. Ask admin to add your profile first." },
         { status: 403 },
       );
     }

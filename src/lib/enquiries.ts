@@ -808,6 +808,7 @@ export function hireCareerApplicant(
     email,
     role,
     phone: application.mobile,
+    dutyShift: "Morning",
     area: input.area?.trim() || application.preferredLocation || application.city,
     skills: application.skills,
     status: "available",

@@ -32,6 +32,7 @@ import {
   staffSalaryStats,
 } from "@/lib/staffStats";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
+import { STAFF_DUTY_SHIFTS } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { usePagedList } from "@/hooks/usePagedList";
 import { toast } from "@/components/ui/toast";
@@ -53,6 +54,7 @@ const emptyForm = {
   status: "available" as Staff["status"],
   email: "",
   password: "",
+  dutyShift: "Morning" as NonNullable<Staff["dutyShift"]>,
   salaryMonthly: "20000",
   salaryPerShift: "700",
 };
@@ -274,6 +276,7 @@ export function StaffWorkspace({
       status: s.status,
       email: s.email || s.loginEmail || "",
       password: "",
+      dutyShift: s.dutyShift || "Morning",
       salaryMonthly: String(s.salaryMonthly ?? 20000),
       salaryPerShift: String(s.salaryPerShift ?? 700),
     });
@@ -1308,6 +1311,25 @@ export function StaffWorkspace({
                     <option value="leave">leave</option>
                   </select>
                 </div>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-ink-soft">Shift</span>
+                  <select
+                    className="field"
+                    value={form.dutyShift}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        dutyShift: e.target.value as NonNullable<Staff["dutyShift"]>,
+                      })
+                    }
+                  >
+                    {STAFF_DUTY_SHIFTS.map((shift) => (
+                      <option key={shift} value={shift}>
+                        {shift}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <input
                   className="field"
                   placeholder="Phone *"

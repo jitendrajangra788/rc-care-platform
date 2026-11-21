@@ -147,7 +147,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
             <p className="mt-3 text-sm text-ink-soft">{s.skills.join(" · ") || "No skills listed"}</p>
             <p className="mt-2 text-sm">{s.phone}</p>
             <p className="mt-1 text-sm font-semibold text-sea">
-              Shift: {s.dutyShift || "Not set — add before work"}
+              Shift: {s.dutyShift || "Morning"}
             </p>
             <p className="mt-1 text-sm font-semibold text-ink">
               Shift pay {formatINR(s.salaryPerShift || 0)}
@@ -263,7 +263,7 @@ export function StaffManager({ staff }: { staff: StaffRow[] }) {
                   ))}
                 </select>
                 <p className="text-xs text-ink-soft">
-                  Save the profile first. Staff can work only after this, and only on this shift.
+                  Morning is used when a shift is not chosen. Staff can still be assigned to any booking.
                 </p>
                 <input
                   className="field"
